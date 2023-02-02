@@ -1,3 +1,6 @@
+import os
+from ray import tune
+
 import torch
 import numpy as np
 
@@ -65,7 +68,22 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
         valid_loss = running_loss / count
         valid_acc = running_acc / count
+
+
+        # save epoch model
+        with tune.checkpoint_dir(epoch) as checkpoint_dir:
+            path = os.path.join(checkpoint_dir, "checkpoint")
+            torch.save((net.state_dict(), optimizer.state_dict()), path)
+
+        # report results
+        tune.report(loss=valid_loss, accuracy=valid_acc, sigma_est=net.spectrogram_layer.sigma.item())
+
         if valid_loss < best_valid_loss: # < best_valid_loss:
+            # save best model
+            with tune.checkpoint_dir(0) as checkpoint_dir:
+                path = os.path.join(checkpoint_dir, "best_model")
+                torch.save((net.state_dict(), optimizer.state_dict()), path)
+
             best_valid_acc = valid_acc
             best_valid_loss = valid_loss
             patience_count = 0
