@@ -1,5 +1,9 @@
+import os
+import librosa
+import tqdm
 import torch
 import numpy as np
+
 import time_frequency as tf
 
 def fmconst(n_points, fnorm=0.25):
@@ -183,3 +187,58 @@ class GaussPulseDatasetTime(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return self.xs[idx], self.ys[idx]
 
+
+def parse_row(row):
+    filename = row[0]
+    fold = int(row[1])
+    target = int(row[2])
+    category = row[3]
+    
+    return filename, fold, target, category
+
+def parse_csv(csv_file):
+    with open(csv_file, 'r') as f:
+        lines = f.readlines()
+    meta = []
+    for line in lines[1:]:
+        row = line.rstrip().split(',')
+        filename, fold, target, category = parse_row(row)
+        meta.append((filename, fold, target, category))
+    return meta
+
+def load_meta_data(source_dir):
+    csv_file = os.path.join(source_dir, 'meta', 'esc50.csv')
+    meta_data = parse_csv(csv_file)
+    return meta_data
+
+class ESC50Dataset(torch.utils.data.Dataset):
+    def __init__(self, source_dir, resample_rate=8000):
+        meta_data = load_meta_data(source_dir)
+        
+        self.xs = []
+        self.ys = []
+        self.categories = []
+        self.folds = []
+        self.sample_rate = None
+        
+        sample_rates = []
+        for (filename, fold, target, category) in tqdm.tqdm(meta_data):
+            # load audio
+            audio_file = os.path.join(source_dir, 'audio', filename)
+            audio, sr = librosa.load(audio_file, sr=resample_rate, res_type='kaiser_fast')
+            sample_rates.append(sr)
+            self.xs.append(audio)
+            self.ys.append(target)
+            self.categories.append(category)
+            self.folds.append(fold)
+            
+        # assert all files have the same sample rates
+        assert len(list(set(sample_rates))) == 1
+        
+        self.sample_rate = sample_rates[0]
+    
+    def __len__(self):
+        return len(self.xs)
+    
+    def __getitem__(self, idx):
+        return self.xs[idx], self.ys[idx]
