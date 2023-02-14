@@ -71,14 +71,13 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
 
         # save epoch model
-        with tune.checkpoint_dir(epoch) as checkpoint_dir:
-            path = os.path.join(checkpoint_dir, "checkpoint")
-            torch.save((net.state_dict(), optimizer.state_dict()), path)
+        #with tune.checkpoint_dir(epoch) as checkpoint_dir:
+        #    path = os.path.join(checkpoint_dir, "checkpoint")
+        #    torch.save((net.state_dict(), optimizer.state_dict()), path)
 
-        # report results
-        tune.report(loss=valid_loss, accuracy=valid_acc, sigma_est=net.spectrogram_layer.sigma.item())
 
         if valid_loss < best_valid_loss: # < best_valid_loss:
+
             # save best model
             with tune.checkpoint_dir(0) as checkpoint_dir:
                 path = os.path.join(checkpoint_dir, "best_model")
@@ -91,6 +90,9 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
                 print("new best valid acc  = {}, patience_count = {}".format(best_valid_acc, patience_count))
         else:
             patience_count += 1
+
+        # report results
+        tune.report(loss=valid_loss, accuracy=valid_acc, sigma_est=net.spectrogram_layer.sigma.item(), best_valid_acc=best_valid_acc, best_valid_loss=best_valid_loss)
 
         if verbose >= 1:
             print("epoch {}, valid loss = {}".format(epoch, valid_loss))
