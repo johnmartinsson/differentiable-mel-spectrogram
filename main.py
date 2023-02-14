@@ -15,13 +15,35 @@ import utils
 
 def run_experiment(config):
     # data
-    sigma_ref = torch.tensor(3.0)
-    dataset = datasets.GaussPulseDatasetTime(
-        sigma     = sigma_ref,
-        n_points  = config['n_points'],
-        noise_std = torch.tensor(config['noise_std']),
-        n_samples = config['n_samples'], 
-    )
+    sigma_ref = torch.tensor(config['sigma_ref'])
+
+    if config['dataset_name'] == 'time':
+        # TODO: a bit hacky to set n_classes like this
+        n_classes = 2
+        dataset = datasets.GaussPulseDatasetTime(
+            sigma     = sigma_ref,
+            n_points  = config['n_points'],
+            noise_std = torch.tensor(config['noise_std']),
+            n_samples = config['n_samples'], 
+        )
+    elif config['dataset_name'] == 'frequency':
+        n_classes = 2
+        dataset = datasets.GaussPulseDatasetFrequency(
+            sigma     = sigma_ref,
+            n_points  = config['n_points'],
+            noise_std = torch.tensor(config['noise_std']),
+            n_samples = config['n_samples'], 
+        )
+    elif config['dataset_name'] == 'time_frequency':
+        n_classes = 3
+        dataset = datasets.GaussPulseDatasetTimeFrequency(
+            sigma     = sigma_ref,
+            n_points  = config['n_points'],
+            noise_std = torch.tensor(config['noise_std']),
+            n_samples = config['n_samples'], 
+        )
+    else:
+        raise ValueError("dataset not defined: ", config['dataset_name'])
 
     trainset, validset = torch.utils.data.random_split(dataset, [0.8, 0.2])
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True, num_workers=2)
@@ -35,7 +57,7 @@ def run_experiment(config):
 
     if config['model_name'] == 'linear_net':
         net = models.LinearNet(
-            n_classes=2,
+            n_classes=n_classes,
             init_sigma=init_sigma,
             device=device,
             size=(config['n_points']+1, config['n_points']+1),
@@ -44,7 +66,7 @@ def run_experiment(config):
         )
     elif config['model_name'] == 'mlp_net':
         net = models.LinearNet(
-            n_classes=2,
+            n_classes=n_classes,
             init_sigma=init_sigma,
             device=device,
             size=(config['n_points']+1, config['n_points']+1),
@@ -53,7 +75,7 @@ def run_experiment(config):
         )
     elif config['model_name'] == 'conv_net':
         net = models.ConvNet(
-            n_classes=2,
+            n_classes=n_classes,
             init_sigma=init_sigma,
             device=device,
             size=(config['n_points']+1, config['n_points']+1),
@@ -116,7 +138,7 @@ def main():
         'model_name' : 'conv_net',
 
         # training
-        'optimizer_name' : 'adam',
+        'optimizer_name' : 'sgd',
         'lr_model' : 1e-3,
         'lr_tf' : 1, #tune.choice([1e-3, 1e-2, 1e-1, 1, 10]),
         'batch_size' : 64,
@@ -129,8 +151,10 @@ def main():
         # dataset
         'n_points' : 128,
         'noise_std' : 0.5, #tune.choice([0.1, 0.5, 1.0, 2.0]),
-        'sigma_scale' : 3, #tune.choice([0.1, 0.5, 3, 15]),
+        'sigma_scale' : tune.choice([0.5, 3]),
         'n_samples' : 2000, #tune.choice([500, 2000]),
+        'sigma_ref' : 3.0,
+        'dataset_name' : 'time_frequency', #tune.choice(['time', 'frequency', 'time_frequency']),
     }
 
     # results terminal reporter
