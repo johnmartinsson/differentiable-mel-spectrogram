@@ -17,6 +17,14 @@ def run_experiment(config):
     # data
     sigma_ref = torch.tensor(config['sigma_ref'])
 
+    # random offset 1/5 of tf-image in each direction
+    if config['center_offset']:
+        f_center_max_offset = 0.1
+        t_center_max_offset = config['n_points']/5
+    else:
+        f_center_max_offset = 0.0
+        t_center_max_offset = 0.0
+
     if config['dataset_name'] == 'time':
         # TODO: a bit hacky to set n_classes like this
         n_classes = 2
@@ -25,6 +33,8 @@ def run_experiment(config):
             n_points  = config['n_points'],
             noise_std = torch.tensor(config['noise_std']),
             n_samples = config['n_samples'], 
+            f_center_max_offset = f_center_max_offset,
+            t_center_max_offset = t_center_max_offset,
         )
     elif config['dataset_name'] == 'frequency':
         n_classes = 2
@@ -33,14 +43,19 @@ def run_experiment(config):
             n_points  = config['n_points'],
             noise_std = torch.tensor(config['noise_std']),
             n_samples = config['n_samples'], 
+            f_center_max_offset = f_center_max_offset,
+            t_center_max_offset = t_center_max_offset,
         )
     elif config['dataset_name'] == 'time_frequency':
         n_classes = 3
+
         dataset = datasets.GaussPulseDatasetTimeFrequency(
             sigma     = sigma_ref,
             n_points  = config['n_points'],
             noise_std = torch.tensor(config['noise_std']),
             n_samples = config['n_samples'], 
+            f_center_max_offset = f_center_max_offset,
+            t_center_max_offset = t_center_max_offset,
         )
     else:
         raise ValueError("dataset not defined: ", config['dataset_name'])
@@ -135,26 +150,28 @@ def main():
     # hyperparamter search space
     search_space = {
         # model
-        'model_name' : 'conv_net',
+        'model_name' : tune.choice(['linear_net', 'mlp_net', 'conv_net']),
 
         # training
-        'optimizer_name' : 'sgd',
+        'optimizer_name' : tune.sample_from(lambda spec: 'adam' if spec.config.model_name == 'conv_net' else 'sgd'),
         'lr_model' : 1e-3,
         'lr_tf' : 1, #tune.choice([1e-3, 1e-2, 1e-1, 1, 10]),
         'batch_size' : 64,
         'epochs' : 500,
-        'trainable' : tune.choice([False, True]),
+        'trainable' : False, #tune.choice([False, True]),
 	'max_epochs' : args.max_epochs,
 	'patience' : 5,
         'device' : 'cuda:0',
         
         # dataset
         'n_points' : 128,
-        'noise_std' : 0.5, #tune.choice([0.1, 0.5, 1.0, 2.0]),
-        'sigma_scale' : tune.choice([0.5, 3]),
+        'noise_std' : 0.5, #tune.choice([0.1, 0.5, 1.0]),
+        #'sigma_scale' : tune.choice([0.5, 1, 3]),
+        'sigma_scale' : tune.choice([0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0]),
         'n_samples' : 2000, #tune.choice([500, 2000]),
-        'sigma_ref' : 3.0,
-        'dataset_name' : 'time_frequency', #tune.choice(['time', 'frequency', 'time_frequency']),
+        'sigma_ref' : 3.0, #tune.choice([1.5, 3.0, 6.0]),
+        'dataset_name' : tune.choice(['time', 'frequency', 'time_frequency']),
+        'center_offset' : tune.choice([True, False]),
     }
 
     # results terminal reporter
