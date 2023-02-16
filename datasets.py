@@ -27,7 +27,7 @@ def torch_random_uniform(limits):
     return x
 
 class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
-    def __init__(self, sigma, n_points, noise_std, n_samples=10000, f_center_max_offset=0, t_center_max_offset=0):
+    def __init__(self, sigma, n_points, noise_std, n_samples=10000, f_center_max_offset=0, t_center_max_offset=0, demo=False):
         
         self.xs = torch.empty((n_samples, n_points), dtype=torch.float64)
         self.ys = torch.empty((n_samples), dtype=torch.long)
@@ -55,14 +55,22 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
 
         # generate samples
         for idx in range(n_samples):
-            f_center_offset = torch_random_uniform([-f_center_max_offset, f_center_max_offset])
-            t_center_offset = torch_random_uniform([-t_center_max_offset, t_center_max_offset])
+            if demo:
+                f_center_offset = 0
+                t_center_offset = 0
+            else:
+                f_center_offset = torch_random_uniform([-f_center_max_offset, f_center_max_offset])
+                t_center_offset = torch_random_uniform([-t_center_max_offset, t_center_max_offset])
 
             t_center = t_center_offset + torch.tensor(n_points/2, dtype=torch.float)
             f_center = f_center_offset + 0.25
 
-            f_offset = torch.rand(1) * f_max
-            t_offset = torch.rand(1) * t_max
+            if demo:
+                f_offset = 0.4 * f_max
+                t_offset = 0.4 * t_max
+            else:
+                f_offset = torch.rand(1) * f_max
+                t_offset = torch.rand(1) * t_max
 
             y = np.random.choice([0, 1, 2])
 
@@ -73,6 +81,9 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
                     sigma_scale = torch_random_uniform([1.0, sigma_scale_max])
                 else:
                     sigma_scale = torch_random_uniform([sigma_scale_min, 1.0])
+
+                if demo:
+                    sigma_scale = 1.0
                     
                 x = gauss_pulse(t_center, f_center, sigma*sigma_scale, n_points)
 
@@ -113,7 +124,11 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
 
             # variability
             noise = noise_std * torch.rand(n_points)
-            amplitude_scale = torch_random_uniform([0.5, 1])
+
+            if demo:
+                amplitude_scale = 1.0
+            else:
+                amplitude_scale = torch_random_uniform([0.5, 1])
             x = (x * amplitude_scale) + noise
             
             self.ys[idx] = torch.tensor(y, dtype=torch.long)
