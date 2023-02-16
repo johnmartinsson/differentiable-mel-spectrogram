@@ -1,3 +1,5 @@
+TODO: Update code and replace sigma with lambda in variable names. To be consistent with article and avoid confusion.
+
 # Differentiable time-frequency transforms
 
 This README.md explains how to reproduce the main results in the paper
