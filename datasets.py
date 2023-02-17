@@ -358,31 +358,46 @@ def load_meta_data(source_dir):
     return meta_data
 
 class ESC50Dataset(torch.utils.data.Dataset):
-    def __init__(self, source_dir, resample_rate=8000):
+    def __init__(self, source_dir, resample_rate=8000, load_cache=False):
         meta_data = load_meta_data(source_dir)
         
         self.xs = []
         self.ys = []
-        self.categories = []
-        self.folds = []
+        #self.categories = []
+        #self.folds = []
         self.sample_rate = None
+
         
-        sample_rates = []
-        for (filename, fold, target, category) in tqdm.tqdm(meta_data):
-            # load audio
-            audio_file = os.path.join(source_dir, 'audio', filename)
-            audio, sr = librosa.load(audio_file, sr=resample_rate, res_type='kaiser_fast')
-            sample_rates.append(sr)
-            self.xs.append(audio)
-            self.ys.append(target)
-            self.categories.append(category)
-            self.folds.append(fold)
+        xs_path = os.path.join(source_dir, "{}_xs.npy".format(resample_rate))
+        ys_path = os.path.join(source_dir, "{}_ys.npy".format(resample_rate))
+
+        if os.path.exists(xs_path) and os.path.exists(ys_path):
+            self.xs = np.load(xs_path)
+            self.ys = np.load(ys_path)
+            self.sample_rate = resample_rate
+        else:
+            sample_rates = []
+            for (filename, fold, target, category) in tqdm.tqdm(meta_data):
+                # load audio
+                audio_file = os.path.join(source_dir, 'audio', filename)
+                audio, sr = librosa.load(audio_file, sr=resample_rate, res_type='kaiser_fast')
+                sample_rates.append(sr)
+                self.xs.append(audio)
+                self.ys.append(target)
+
+            self.xs = np.array(self.xs)
+            self.ys = np.array(self.ys)
+
+            np.save(xs_path, self.xs)
+            np.save(ys_path, self.ys)
+                
+            # assert all files have the same sample rates
+            assert len(list(set(sample_rates))) == 1
+            # assert proper resampling
+            assert sample_rates[0] == resample_rate
             
-        # assert all files have the same sample rates
-        assert len(list(set(sample_rates))) == 1
+            self.sample_rate = resample_rate
         
-        self.sample_rate = sample_rates[0]
-    
     def __len__(self):
         return len(self.xs)
     
