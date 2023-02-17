@@ -1,11 +1,12 @@
 import numpy as np
 
-def plot_spectrogram(s, ax):
+def plot_spectrogram(s, ax, decorate_axes=True):
     ax.imshow(np.flip(s, axis=0), aspect='auto')
     
     # decorate axes
-    ax.set_xlabel('time')
-    ax.set_ylabel('normalized frequency')
+    if decorate_axes:
+        ax.set_xlabel('time')
+        ax.set_ylabel('normalized frequency')
     
     (fbins, tbins) = s.shape
     yticks = [t for t in np.linspace(0, fbins-1, 5)]
