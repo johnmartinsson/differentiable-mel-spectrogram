@@ -6,11 +6,11 @@ import torchaudio
 import time_frequency as tf
 
 class SpectrogramLayer(nn.Module):
-    def __init__(self, init_sigma, device='cpu', optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1):
         super(SpectrogramLayer, self).__init__()
         
         self.hop_length = hop_length
-        self.sigma      = nn.Parameter(init_sigma)
+        self.lambd      = nn.Parameter(init_lambd)
         self.device     = device
         self.size       = size #(512, 1024)
         self.optimized  = optimized
@@ -25,7 +25,7 @@ class SpectrogramLayer(nn.Module):
             spectrograms = torch.empty((batch_size, 1, n_points + 1, n_points // self.hop_length + 1), dtype=torch.float32).to(self.device)
         
         for idx in range(batch_size):
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.sigma), optimized=self.optimized, device=self.device, hop_length=self.hop_length)
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length)
 
             if self.optimized:
                 spectrogram = F.interpolate(torch.unsqueeze(torch.unsqueeze(spectrogram, axis=0), axis=0), size=(self.size[0], self.size[1]))
@@ -36,11 +36,11 @@ class SpectrogramLayer(nn.Module):
         return spectrograms
 
 class MelSpectrogramLayer(nn.Module):
-    def __init__(self, init_sigma, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False):
+    def __init__(self, init_lambd, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False):
         super(MelSpectrogramLayer, self).__init__()
         
         self.hop_length = hop_length
-        self.sigma      = nn.Parameter(init_sigma)
+        self.lambd      = nn.Parameter(init_lambd)
         self.device     = device
         self.optimized  = optimized
 
@@ -58,7 +58,7 @@ class MelSpectrogramLayer(nn.Module):
         (batch_size, n_points) = x.shape
         mel_spectrograms = torch.empty((batch_size, 1, self.n_freq, self.n_time), dtype=torch.float32).to(self.device)
         for idx in range(batch_size):
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.sigma), device=self.device, optimized=self.optimized, hop_length=self.hop_length)
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), device=self.device, optimized=self.optimized, hop_length=self.hop_length)
 
             (n_freq, _) = spectrogram.shape
 
@@ -78,9 +78,9 @@ class MelSpectrogramLayer(nn.Module):
         return mel_spectrograms
 
 class MelLinearNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
         super(MelLinearNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_sigma, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
         
@@ -99,9 +99,9 @@ class MelLinearNet(nn.Module):
         return x, s
 
 class MelMlpNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
         super(MelMlpNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_sigma, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
         
@@ -122,9 +122,9 @@ class MelMlpNet(nn.Module):
  
 
 class LinearNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
         super(LinearNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_sigma, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
         self.device = device
         self.size = size
         
@@ -139,9 +139,9 @@ class LinearNet(nn.Module):
         return x, s
 
 class MlpNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
         super(MlpNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_sigma, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
         self.device = device
         self.size = size
         
@@ -158,9 +158,9 @@ class MlpNet(nn.Module):
         return x, s
 
 class ConvNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
         super(ConvNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_sigma, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
         
         self.device = device
         self.size = size

@@ -12,6 +12,7 @@ import datasets
 import models
 import train
 import utils
+import search_spaces
 
 def run_experiment(config):
     # data
@@ -64,7 +65,7 @@ def run_experiment(config):
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True, num_workers=2)
     validloader = torch.utils.data.DataLoader(validset, batch_size=config['batch_size'], shuffle=False, num_workers=2)
 
-    init_sigma = sigma_ref * config['sigma_scale']
+    init_lambd = sigma_ref * config['sigma_scale']
     hop_length = 1
 
     # model
@@ -73,7 +74,7 @@ def run_experiment(config):
     if config['model_name'] == 'linear_net':
         net = models.LinearNet(
             n_classes=n_classes,
-            init_sigma=init_sigma,
+            init_lambd=init_lambd,
             device=device,
             size=(config['n_points']+1, config['n_points']+1),
             hop_length=hop_length,
@@ -82,7 +83,7 @@ def run_experiment(config):
     elif config['model_name'] == 'mlp_net':
         net = models.LinearNet(
             n_classes=n_classes,
-            init_sigma=init_sigma,
+            init_lambd=init_lambd,
             device=device,
             size=(config['n_points']+1, config['n_points']+1),
             hop_length=hop_length,
@@ -91,7 +92,7 @@ def run_experiment(config):
     elif config['model_name'] == 'conv_net':
         net = models.ConvNet(
             n_classes=n_classes,
-            init_sigma=init_sigma,
+            init_lambd=init_lambd,
             device=device,
             size=(config['n_points']+1, config['n_points']+1),
             hop_length=hop_length,
@@ -107,7 +108,7 @@ def run_experiment(config):
     parameters = []
     for idx, (name, param) in enumerate(net.named_parameters()):
 
-        if name == "spectrogram_layer.sigma":
+        if name == "spectrogram_layer.lambd":
             parameters += [{
                 'params' : [param],
                 'lr' : config['lr_tf'],
@@ -148,38 +149,15 @@ def main():
     args = parser.parse_args()
 
     # hyperparamter search space
-    search_space = {
-        # model
-        'model_name' : tune.choice(['linear_net', 'mlp_net', 'conv_net']),
 
-        # training
-        'optimizer_name' : tune.sample_from(lambda spec: 'adam' if spec.config.model_name == 'conv_net' else 'sgd'),
-        'lr_model' : 1e-3,
-        'lr_tf' : 1, #tune.choice([1e-3, 1e-2, 1e-1, 1, 10]),
-        'batch_size' : 64,
-        'epochs' : 500,
-        'trainable' : False, #tune.choice([False, True]),
-	'max_epochs' : args.max_epochs,
-	'patience' : 5,
-        'device' : 'cuda:0',
-        
-        # dataset
-        'n_points' : 128,
-        'noise_std' : 0.5, #tune.choice([0.1, 0.5, 1.0]),
-        #'sigma_scale' : tune.choice([0.5, 1, 3]),
-        'sigma_scale' : tune.choice([0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0]),
-        'n_samples' : 2000, #tune.choice([500, 2000]),
-        'sigma_ref' : 3.0, #tune.choice([1.5, 3.0, 6.0]),
-        'dataset_name' : tune.choice(['time', 'frequency', 'time_frequency']),
-        'center_offset' : tune.choice([True, False]),
-    }
+    search_space = search_spaces.development_space(args.max_epochs)
 
     # results terminal reporter
     reporter = CLIReporter(
         metric_columns=[
             "loss",
             "accuracy",
-            "sigma_est",
+            "lambd_est",
             "training_iteration",
             "best_valid_acc",
         ],
