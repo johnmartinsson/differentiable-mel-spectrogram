@@ -54,7 +54,7 @@ class MelSpectrogramLayer(nn.Module):
 
       
     def forward(self, x):
-    
+
         (batch_size, n_points) = x.shape
         mel_spectrograms = torch.empty((batch_size, 1, self.n_freq, self.n_time), dtype=torch.float32).to(self.device)
         for idx in range(batch_size):
@@ -71,7 +71,8 @@ class MelSpectrogramLayer(nn.Module):
             )
 
             mel_fb = mel_fb.to(self.device)
-     
+            mel_fb = mel_fb.to(spectrogram.dtype)
+    
             mel_spectrogram = torch.matmul(spectrogram.transpose(-1, -2), mel_fb).transpose(-1, -2)
             mel_spectrograms[idx,:,:,:] = torch.unsqueeze(mel_spectrogram, axis=0)
 
@@ -99,7 +100,7 @@ class MelLinearNet(nn.Module):
         return x, s
 
 class MelMlpNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
         super(MelMlpNet, self).__init__()
         self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         self.device = device
@@ -107,12 +108,15 @@ class MelMlpNet(nn.Module):
         
         self.fc1 = nn.Linear(self.size[0] * self.size[1], 32)
         self.fc2 = nn.Linear(32, n_classes)
+        self.energy_normalize = energy_normalize
 
     def forward(self, x):
         # compute spectrograms
         s = self.spectrogram_layer(x)
+
         # normalization of s? PCEN?
-        #s = torch.log(s + 1)
+        if self.energy_normalize:
+            s = torch.log(s + 1)
 
         x = self.fc1(s.view(-1, self.size[0] * self.size[1]))
         x = F.relu(x)
@@ -120,6 +124,44 @@ class MelMlpNet(nn.Module):
         x = self.fc2(x)
         return x, s
  
+class MelConvNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
+        super(MelConvNet, self).__init__()
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        
+        self.device = device
+        self.size = (n_mels, n_points // hop_length + 1)
+        self.energy_normalize = energy_normalize
+
+        self.hidden_state = 32
+        
+        self.conv1 = nn.Conv2d(1, self.hidden_state, 5, padding='same')
+        self.fc1 = nn.Linear(self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2), self.hidden_state)
+        self.fc2 = nn.Linear(self.hidden_state, n_classes)
+
+        self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(p=0.2)
+        
+    def forward(self, x):
+        # compute spectrograms
+        s = self.spectrogram_layer(x)
+
+        # normalization of s? PCEN?
+        if self.energy_normalize:
+            s = torch.log(s + 1)
+
+        # TODO: residual layers?
+        x = self.conv1(s)
+        x = F.relu(x)
+        x = self.pool(x)
+
+        x = x.view(-1, self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2))
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+
+        return x, s
 
 class LinearNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
