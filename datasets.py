@@ -3,6 +3,7 @@ import librosa
 import tqdm
 import torch
 import numpy as np
+import glob
 
 import time_frequency as tf
 
@@ -358,7 +359,7 @@ def load_meta_data(source_dir):
     return meta_data
 
 class ESC50Dataset(torch.utils.data.Dataset):
-    def __init__(self, source_dir, resample_rate=8000, load_cache=False):
+    def __init__(self, source_dir, resample_rate=8000):
         meta_data = load_meta_data(source_dir)
         
         self.xs = []
@@ -401,5 +402,43 @@ class ESC50Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.xs)
     
+    def __getitem__(self, idx):
+        return self.xs[idx], self.ys[idx]
+
+class AudioMNISTDataset(torch.utils.data.Dataset):
+    # VERSION: https://doi.org/10.5281/zenodo.1342401
+    def __init__(self, source_dir):
+        # load data
+        wav_paths = glob.glob(os.path.join(source_dir, 'recordings', '*.wav'))
+
+        self.xs = []
+        self.ys = []
+
+        sample_rates = []
+        for wav_path in wav_paths:
+            audio, sr = librosa.load(wav_path, sr=None) # already 8000 Hz
+            sample_rates.append(sr)
+            target = int(os.path.basename(wav_path).split('_')[0])
+
+            if len(audio) >= 1500 and len(audio) <= 5500:
+                x = audio.copy()
+                x.resize(5500) # pad end with zeros up to max length
+                self.xs.append(x)
+                self.ys.append(target)
+
+        assert len(list(set(self.ys))) == 10 # assert 10 classes
+
+        self.xs = np.array(self.xs)
+        self.ys = np.array(self.ys)
+
+        # assert all files have the same sample rates
+        assert len(list(set(sample_rates))) == 1
+        # assert proper sample rate
+        assert sample_rates[0] == 8000
+
+        self.sample_rate = 8000
+
+    def __len__(self):
+        return len(self.xs)
     def __getitem__(self, idx):
         return self.xs[idx], self.ys[idx]
