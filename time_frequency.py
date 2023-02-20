@@ -27,10 +27,11 @@ def differentiable_gaussian_window(lambd, window_length, device='cpu'):
     return window
 
 def differentiable_spectrogram(x, lambd, optimized=False, device='cpu', hop_length=1):
-    n_stds = 10
+    n_stds = 6
 
     # optimization potentially makes gradients weaker, but faster
     if optimized:
+        # TODO: not sure if this optimization should affect the results as much as it does?
         window_length = next_power_of_2((lambd * n_stds).detach().cpu().numpy())
     else:
         window_length = len(x)
@@ -38,10 +39,16 @@ def differentiable_spectrogram(x, lambd, optimized=False, device='cpu', hop_leng
     window = differentiable_gaussian_window(lambd, window_length=window_length, device=device).to(device)
     n_fft = len(window)
     
-    # TODO: quadratic TF-image, n_fft=len(window)*2 could be removed to remove redundancy
-    s = torch.stft(x, n_fft=len(window)*2, hop_length=hop_length, win_length=len(window), window=window, return_complex=True, pad_mode='constant')
+    # quadratic TF-image without redundancy
+    if optimized:
+        s = torch.stft(x, n_fft=len(window), hop_length=hop_length, win_length=len(window), window=window, return_complex=True, pad_mode='constant')
+    else:
+    # quadratic TF-image with redundancy
+        s = torch.stft(x, n_fft=len(window)*2, hop_length=hop_length, win_length=len(window), window=window, return_complex=True, pad_mode='constant')
     
     s = torch.pow(torch.abs(s), 2)
+
+    # TODO: permute axis
 
     return s
 
