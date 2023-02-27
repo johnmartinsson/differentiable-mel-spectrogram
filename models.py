@@ -6,11 +6,11 @@ import torchaudio
 import time_frequency as tf
 
 class SpectrogramLayer(nn.Module):
-    def __init__(self, init_sigma, device='cpu', optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1):
         super(SpectrogramLayer, self).__init__()
         
         self.hop_length = hop_length
-        self.sigma      = nn.Parameter(init_sigma)
+        self.lambd      = nn.Parameter(init_lambd)
         self.device     = device
         self.size       = size #(512, 1024)
         self.optimized  = optimized
@@ -25,22 +25,23 @@ class SpectrogramLayer(nn.Module):
             spectrograms = torch.empty((batch_size, 1, n_points + 1, n_points // self.hop_length + 1), dtype=torch.float32).to(self.device)
         
         for idx in range(batch_size):
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.sigma), optimized=self.optimized, device=self.device, hop_length=self.hop_length)
+            # TODO: norm?
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length, norm=False)
 
-            if self.optimized:
-                spectrogram = F.interpolate(torch.unsqueeze(torch.unsqueeze(spectrogram, axis=0), axis=0), size=(self.size[0], self.size[1]))
-                spectrogram = spectrogram[0,0]
+            #if self.optimized:
+            #    spectrogram = F.interpolate(torch.unsqueeze(torch.unsqueeze(spectrogram, axis=0), axis=0), size=(self.size[0], self.size[1]))
+            #    spectrogram = spectrogram[0,0]
 
             spectrograms[idx,:,:,:] = torch.unsqueeze(spectrogram, axis=0)
         
         return spectrograms
 
 class MelSpectrogramLayer(nn.Module):
-    def __init__(self, init_sigma, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False):
+    def __init__(self, init_lambd, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False):
         super(MelSpectrogramLayer, self).__init__()
         
         self.hop_length = hop_length
-        self.sigma      = nn.Parameter(init_sigma)
+        self.lambd      = nn.Parameter(init_lambd)
         self.device     = device
         self.optimized  = optimized
 
@@ -54,11 +55,11 @@ class MelSpectrogramLayer(nn.Module):
 
       
     def forward(self, x):
-    
+
         (batch_size, n_points) = x.shape
         mel_spectrograms = torch.empty((batch_size, 1, self.n_freq, self.n_time), dtype=torch.float32).to(self.device)
         for idx in range(batch_size):
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.sigma), device=self.device, optimized=self.optimized, hop_length=self.hop_length)
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), device=self.device, optimized=self.optimized, hop_length=self.hop_length, norm=False)
 
             (n_freq, _) = spectrogram.shape
 
@@ -71,18 +72,20 @@ class MelSpectrogramLayer(nn.Module):
             )
 
             mel_fb = mel_fb.to(self.device)
-     
+            mel_fb = mel_fb.to(spectrogram.dtype)
+    
             mel_spectrogram = torch.matmul(spectrogram.transpose(-1, -2), mel_fb).transpose(-1, -2)
             mel_spectrograms[idx,:,:,:] = torch.unsqueeze(mel_spectrogram, axis=0)
 
         return mel_spectrograms
 
 class MelLinearNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
         super(MelLinearNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_sigma, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
+        self.energy_normalize = energy_normalize
         
         self.fc = nn.Linear(self.size[0] * self.size[1], n_classes)
 
@@ -90,29 +93,32 @@ class MelLinearNet(nn.Module):
         # compute spectrograms
         s = self.spectrogram_layer(x)
         # normalization of s? PCEN?
-        #s = torch.log(s + 1)
+        if self.energy_normalize:
+            s = torch.log(s + 1)
 
         # dropout on spectrogram
-        x = F.dropout(s.view(-1, self.size[0] * self.size[1]), p=0.4)
-        #x = s.view(-1, self.size[0] * self.size[1])
+        x = F.dropout(s.view(-1, self.size[0] * self.size[1]), p=0.2)
         x = self.fc(x)
         return x, s
 
 class MelMlpNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
         super(MelMlpNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_sigma, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
         
         self.fc1 = nn.Linear(self.size[0] * self.size[1], 32)
         self.fc2 = nn.Linear(32, n_classes)
+        self.energy_normalize = energy_normalize
 
     def forward(self, x):
         # compute spectrograms
         s = self.spectrogram_layer(x)
+
         # normalization of s? PCEN?
-        #s = torch.log(s + 1)
+        if self.energy_normalize:
+            s = torch.log(s + 1)
 
         x = self.fc1(s.view(-1, self.size[0] * self.size[1]))
         x = F.relu(x)
@@ -120,11 +126,49 @@ class MelMlpNet(nn.Module):
         x = self.fc2(x)
         return x, s
  
+class MelConvNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
+        super(MelConvNet, self).__init__()
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        
+        self.device = device
+        self.size = (n_mels, n_points // hop_length + 1)
+        self.energy_normalize = energy_normalize
+
+        self.hidden_state = 32
+        
+        self.conv1 = nn.Conv2d(1, self.hidden_state, 5, padding='same')
+        self.fc1 = nn.Linear(self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2), self.hidden_state)
+        self.fc2 = nn.Linear(self.hidden_state, n_classes)
+
+        self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(p=0.2)
+        
+    def forward(self, x):
+        # compute spectrograms
+        s = self.spectrogram_layer(x)
+
+        # normalization of s? PCEN?
+        if self.energy_normalize:
+            s = torch.log(s + 1)
+
+        # TODO: residual layers?
+        x = self.conv1(s)
+        x = F.relu(x)
+        x = self.pool(x)
+
+        x = x.view(-1, self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2))
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+
+        return x, s
 
 class LinearNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
         super(LinearNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_sigma, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
         self.device = device
         self.size = size
         
@@ -138,29 +182,82 @@ class LinearNet(nn.Module):
         x = self.fc(x)
         return x, s
 
-class MlpNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, optimized=False, size=(512, 1024), hop_length=1):
-        super(MlpNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_sigma, device=device, optimized=optimized, size=size, hop_length=hop_length)
+class NonLinearNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+        super(NonLinearNet, self).__init__()
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
         self.device = device
         self.size = size
         
-        self.fc1 = nn.Linear(size[0] * size[1], 32)
-        self.fc2 = nn.Linear(32, n_classes)
+        self.hidden_state = 32
+        self.fc1 = nn.Linear(size[0] * size[1], self.hidden_state)
+        self.fc2 = nn.Linear(self.hidden_state, n_classes)
+        #self.bn  = nn.BatchNorm2d(1)
+
+    def forward(self, x):
+        # compute spectrograms
+        s = self.spectrogram_layer(x)
+        #s = self.bn(s)
+        x = s.view(-1, self.size[0] * self.size[1])
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return x, s
+
+class MlpNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+        super(MlpNet, self).__init__()
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.device = device
+        self.size = size
+        
+        self.fc1 = nn.Linear(size[0] * size[1], 128)
+        self.fc2 = nn.Linear(128, n_classes)
 
     def forward(self, x):
         # compute spectrograms
         s = self.spectrogram_layer(x)
         x = self.fc1(s.view(-1, self.size[0] * self.size[1]))
         x = F.relu(x)
-        x = F.dropout(x, p=0.2)
+        #x = F.dropout(x, p=0.2)
         x = self.fc2(x)
         return x, s
 
+class ShallowConvNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+        super(ShallowConvNet, self).__init__()
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        
+        self.device = device
+        self.size = size
+
+        self.hidden_state = 32
+        
+        self.conv1 = nn.Conv2d(1, self.hidden_state, 5, padding='same')
+        self.fc1 = nn.Linear(self.hidden_state * (size[0] // 2) * (size[1] // 2), n_classes)
+
+        self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(p=0.2)
+        
+    def forward(self, x):
+        # compute spectrograms
+        s = self.spectrogram_layer(x)
+
+        # TODO: residual layers?
+        x = self.conv1(s)
+        x = F.relu(x)
+        x = x + s
+        #x = self.pool(x)
+
+        x = x.view(-1, self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2))
+        x = self.fc1(x)
+
+        return x, s
+
 class ConvNet(nn.Module):
-    def __init__(self, n_classes, init_sigma, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
         super(ConvNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_sigma, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
         
         self.device = device
         self.size = size
