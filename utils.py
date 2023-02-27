@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import torch
+import tqdm
 
 import models
 import datasets
@@ -15,23 +16,17 @@ def get_config_by_row(row):
 
 def get_dataset_by_config(config):
     if config['dataset_name'] == 'esc50':
-        n_classes = 50
-
         dataset = datasets.ESC50Dataset(
             source_dir    = '/home/john/gits/differentiable-time-frequency-transforms/data/esc50',
             resample_rate = config['resample_rate']
         )
 
     elif config['dataset_name'] == 'audio_mnist':
-        n_classes = 10
-
         dataset = datasets.AudioMNISTDataset(
             source_dir    = '/home/john/gits/differentiable-time-frequency-transforms/data/audio-mnist',
         )
 
     else:
-        sigma_ref = torch.tensor(config['sigma_ref'])
-
         # random offset 1/5 of tf-image in each direction
         if config['center_offset']:
             f_center_max_offset = 0.1
@@ -43,7 +38,7 @@ def get_dataset_by_config(config):
 
         if config['dataset_name'] == 'time':
             dataset = datasets.GaussPulseDatasetTime(
-                sigma     = config['sigma_ref'],
+                sigma     = torch.tensor(config['sigma_ref']),
                 n_points  = config['n_points'],
                 noise_std = torch.tensor(config['noise_std']),
                 n_samples = config['n_samples'], 
@@ -52,7 +47,7 @@ def get_dataset_by_config(config):
             )
         elif config['dataset_name'] == 'frequency':
             dataset = datasets.GaussPulseDatasetFrequency(
-                sigma     = config['sigma_ref'],
+                sigma     = torch.tensor(config['sigma_ref']),
                 n_points  = config['n_points'],
                 noise_std = torch.tensor(config['noise_std']),
                 n_samples = config['n_samples'], 
@@ -61,7 +56,7 @@ def get_dataset_by_config(config):
             )
         elif config['dataset_name'] == 'time_frequency':
             dataset = datasets.GaussPulseDatasetTimeFrequency(
-                sigma     = config['sigma_ref'],
+                sigma     = torch.tensor(config['sigma_ref']),
                 n_points  = config['n_points'],
                 noise_std = torch.tensor(config['noise_std']),
                 n_samples = config['n_samples'], 
@@ -94,7 +89,16 @@ def get_model_by_config(config):
     if config['model_name'] == 'linear_net':
         net = models.LinearNet(
             n_classes  = n_classes,
-            init_lambd = config['init_lambd'],
+            init_lambd = torch.tensor(config['init_lambd']),
+            device     = config['device'],
+            size       = (config['n_points']+1, config['n_points']+1),
+            hop_length = config['hop_length'],
+            optimized  = config['optimized'],
+        )
+    elif config['model_name'] == 'non_linear_net':
+        net = models.NonLinearNet(
+            n_classes  = n_classes,
+            init_lambd = torch.tensor(config['init_lambd']),
             device     = config['device'],
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
@@ -103,7 +107,7 @@ def get_model_by_config(config):
     elif config['model_name'] == 'mlp_net':
         net = models.MlpNet(
             n_classes  = n_classes,
-            init_lambd = config['init_lambd'],
+            init_lambd = torch.tensor(config['init_lambd']),
             device     = config['device'],
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
@@ -112,11 +116,23 @@ def get_model_by_config(config):
     elif config['model_name'] == 'conv_net':
         net = models.ConvNet(
             n_classes  = n_classes,
-            init_lambd = config['init_lambd'],
+            init_lambd = torch.tensor(config['init_lambd']),
             device     = config['device'],
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
             optimized  = config['optimized'],
+        )
+    elif config['model_name'] == 'mel_linear_net':
+        net = models.MelLinearNet(
+            n_classes   = n_classes,
+            init_lambd  = torch.tensor(config['init_lambd']),
+            device      = config['device'],
+            n_mels      = config['n_mels'],
+            sample_rate = config['resample_rate'],
+            n_points    = config['n_points'],
+            hop_length  = config['hop_length'],
+            optimized   = config['optimized'],
+            energy_normalize = config['energy_normalize'],
         )
     elif config['model_name'] == 'mel_mlp_net':
         net = models.MelMlpNet(
@@ -126,8 +142,8 @@ def get_model_by_config(config):
             n_mels      = config['n_mels'],
             sample_rate = config['resample_rate'],
             n_points    = config['n_points'],
-            hop_length  = config['hop_length'], #int(config['resample_rate'] * config['hop_time_s']),
-            optimized   = config['optimized'], #True,
+            hop_length  = config['hop_length'],
+            optimized   = config['optimized'],
             energy_normalize = config['energy_normalize'],
         )
     elif config['model_name'] == 'mel_conv_net':
@@ -148,19 +164,44 @@ def get_model_by_config(config):
 
     return net
 
-def load_model(row):
-    print(row)
-    logdir = row['logdir']
-    print(logdir)
-    model_path = os.path.join(logdir, 'checkpoint_000000/best_model')
-    model = None
-    return model
+def get_predictions_by_row(row, device='cpu', split='valid'):
+    config = get_config_by_row(row)
+    config['device'] = device
+    logdir = row[1]['logdir']
+    model_chechpoint_path = os.path.join(logdir, 'checkpoint_000000', 'best_model')
+    net = get_model_by_config(config)
+    (model_state, optimizer_state) = torch.load(model_chechpoint_path)
+    net.load_state_dict(model_state)
+    net.to(device)
 
-def load_dataset(row):
-    return dataset
+    # load dataset
+    trainset,validset,testset = get_dataset_by_config(config)
 
-def predict(model, dataset):
-    return labels, predictions
+    if split == 'valid':
+        dataset = validset
+    elif split == 'train':
+        dataset = trainset
+    elif split == 'test':
+        dataset = testset
+    else:
+        raise ValueError("data split: {} is not supported".format(split))
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8)
+
+    net.eval()
+    all_predictions = []
+    all_labels = []
+    for data in tqdm.tqdm(dataloader):
+        inputs, labels = data
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        outputs, _ = net(inputs)
+        predictions = torch.argmax(outputs, axis=1)
+
+        all_labels.append(labels.detach().cpu().numpy())
+        all_predictions.append(predictions.detach().cpu().numpy())
+
+    return np.concatenate(all_labels), np.concatenate(all_predictions)
 
 def plot_spectrogram(s, ax, decorate_axes=True):
     ax.imshow(np.flip(s, axis=0), aspect='auto')

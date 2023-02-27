@@ -19,6 +19,7 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
         net.train()
 
         running_loss = 0.0
+        running_energy = 0.0
         count = 0
         for i, data in enumerate(trainloader):
             inputs, labels = data
@@ -26,9 +27,10 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
             optimizer.zero_grad()
 
-            logits, _ = net(inputs)
+            logits, s = net(inputs)
             loss = loss_fn(logits, labels)# + aux_loss
             loss.backward()
+
             optimizer.step()
 
             if verbose >= 2:
@@ -38,9 +40,11 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
                     print("est. lambd = ", net.spectrogram_layer.lambd.item())
 
             running_loss += loss.item()
+            running_energy += np.sum(s.cpu().detach().numpy())
             count += 1
             
         train_loss = running_loss / count
+        train_energy = running_energy / count
 
         if verbose >= 1:
             print("epoch {}, train loss = {}".format(epoch, running_loss / count))
@@ -85,6 +89,7 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
             best_valid_acc = valid_acc
             best_valid_loss = valid_loss
+            best_lambd_est = net.spectrogram_layer.lambd.item()
             patience_count = 0
             if verbose >= 1:
                 print("new best valid acc  = {}, patience_count = {}".format(best_valid_acc, patience_count))
@@ -92,7 +97,7 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
             patience_count += 1
 
         # report results
-        tune.report(loss=valid_loss, accuracy=valid_acc, lambd_est=net.spectrogram_layer.lambd.item(), best_valid_acc=best_valid_acc, best_valid_loss=best_valid_loss)
+        tune.report(loss=train_loss, lambd_est=net.spectrogram_layer.lambd.item(), valid_loss=valid_loss, best_valid_acc=best_valid_acc, best_valid_loss=best_valid_loss, energy=train_energy, best_lambd_est=best_lambd_est)
 
         if verbose >= 1:
             print("epoch {}, valid loss = {}".format(epoch, valid_loss))

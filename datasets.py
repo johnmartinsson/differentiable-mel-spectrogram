@@ -35,24 +35,27 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
         self.locs = torch.zeros((n_samples, 4), dtype=torch.float64)
 
 	# maximum time-offset for pulses from center
-        #s = 2
         # TODO: n_points / 5 ?
         image_displacement = 5
         t_max = n_points / image_displacement #sigma*s
 
-        # TODO: what should this value be?
+
         f_max = 0.5 / image_displacement #0.1 #1/(np.pi*sigma) * s #0.1 #sigma*s
+
+        # TODO: lower limits
+        t_min = sigma
+        f_min = 0.5 * (t_min / n_points)
 
 
         # TODO: are these reasonable values?
-	# maximum duration scaling for pulses on center
-        #sigma_scale_max = ((s + 3)*2) / 6
         sigma_scale_max = (2*t_max)/(6*sigma) + 1
 	# minimum duration scaling for pulses on center
         sigma_scale_min = 1 / sigma_scale_max 
 
-        print("sigma_scale_min :", sigma_scale_min)
-        print("sigma_scale_max :", sigma_scale_max)
+        #print("sigma_scale_min :", sigma_scale_min)
+        #print("sigma_scale_max :", sigma_scale_max)
+        print("f_min = {}, f_max = {}".format(f_min, f_max))
+        print("t_min = {}, t_max = {}".format(t_min, t_max))
 
         # generate samples
         for idx in range(n_samples):
@@ -70,8 +73,12 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
                 f_offset = 0.4 * f_max
                 t_offset = 0.4 * t_max
             else:
-                f_offset = torch.rand(1) * f_max
-                t_offset = torch.rand(1) * t_max
+                # TODO:
+                f_offset = torch_random_uniform([f_min, f_max])
+                t_offset = torch_random_uniform([t_min, t_max])
+
+                #f_offset = torch.rand(1) * f_max
+                #t_offset = torch.rand(1) * t_max
 
             y = np.random.choice([0, 1, 2])
 
