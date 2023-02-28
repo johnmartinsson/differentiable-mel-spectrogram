@@ -70,9 +70,11 @@ def main():
     args = parser.parse_args()
 
     # hyperparamter search space
-    search_space = search_spaces.development_space(args.max_epochs)
+    #search_space = search_spaces.development_space(args.max_epochs)
+    #search_space = search_spaces.time_frequency_lambda_search_linear(args.max_epochs)
+
     #search_space = search_spaces.development_space_esc50(args.max_epochs)
-    #search_space = search_spaces.development_space_audio_mnist(args.max_epochs)
+    search_space = search_spaces.development_space_audio_mnist(args.max_epochs)
 
     # results terminal reporter
     reporter = CLIReporter(
@@ -103,7 +105,7 @@ def main():
             verbose=1,
             progress_reporter = reporter,
             name              = args.name,
-            local_dir         = '/home/martinsson/ray_results/',
+            local_dir         = '/mnt/storage_1/john/ray_results/',
         ),
 	tune_config = tune.TuneConfig(
 	    num_samples = args.num_samples,

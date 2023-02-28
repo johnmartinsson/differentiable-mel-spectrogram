@@ -22,14 +22,16 @@ def differentiable_gaussian_window(lambd, window_length, device='cpu', norm=True
     m = torch.arange(0, window_length).float().to(device)
     
     window = torch.exp(-0.5 * torch.pow((m - window_length / 2) / (lambd + 1e-15), 2))
-    window_norm = window / torch.sum(torch.pow(window, 2))
+    window_norm = window / torch.sqrt(torch.sum(torch.pow(window, 2)))
+
+    return window_norm
     
-    if norm:
-        #print("returning energy normalized window: ", torch.sum(window_norm))
-        return window_norm
-    else:
-        #print("returning amplitude normalized window: ", torch.sum(window))
-        return window
+    #if norm:
+    #    #print("returning energy normalized window: ", torch.sum(window_norm))
+    #    return window_norm
+    #else:
+    #    #print("returning amplitude normalized window: ", torch.sum(window))
+    #    return window
 
 def differentiable_spectrogram(x, lambd, optimized=False, device='cpu', hop_length=1, return_window=False, norm=False, n_stds=6):
 

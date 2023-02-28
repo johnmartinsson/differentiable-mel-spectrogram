@@ -84,7 +84,7 @@ class MelSpectrogramLayer(nn.Module):
 class MelLinearNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
         super(MelLinearNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, norm=normalize_window)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, normalize_window=normalize_window)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
         self.energy_normalize = energy_normalize
@@ -106,7 +106,7 @@ class MelLinearNet(nn.Module):
 class MelMlpNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
         super(MelMlpNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, normalize_window=normalize_window)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
         
@@ -131,7 +131,7 @@ class MelMlpNet(nn.Module):
 class MelConvNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
         super(MelConvNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, normalize_window=normalize_window)
         
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)

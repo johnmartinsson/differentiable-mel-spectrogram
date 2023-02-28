@@ -9,7 +9,7 @@ def development_space_audio_mnist(max_epochs):
         'hop_length' :int(resample_rate * 0.010),
         'energy_normalize' : True,
         'optimized' : False,
-        'normalize_window' : False,
+        'normalize_window' : True,
 
         # training
         'optimizer_name' : 'sgd',
@@ -23,7 +23,7 @@ def development_space_audio_mnist(max_epochs):
         
         # dataset
         'resample_rate' : resample_rate,
-        'init_lambd' : tune.grid_search([(resample_rate*x)/6 for x in [0.01, 0.025, 0.050, 0.1, 0.2, 0.4, 0.6, 0.8]]),
+        'init_lambd' : tune.grid_search([(resample_rate*x)/6 for x in [0.01, 0.025, 0.050, 0.1]]), #, 0.2, 0.4, 0.6, 0.8]]),
         #'init_lambd' : tune.grid_search([(resample_rate*x)/6 for x in [0.005, 0.025, 0.8]]),
         'dataset_name' : 'audio_mnist', 
         'n_points' : 5500, # hard coded zero-padding
@@ -133,7 +133,7 @@ def time_frequency_lambda_search_linear(max_epochs):
         'model_name' : 'linear_net', #tune.choice(['linear_net', 'mlp_net', 'conv_net']),
         'hop_length' : 1,
         'optimized'  : False,
-        'normalize_window' : False,
+        'normalize_window' : True,
 
         # training
         'optimizer_name' : 'sgd',
