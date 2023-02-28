@@ -1,7 +1,7 @@
+import torch
 import os
 import librosa
 import tqdm
-import torch
 import numpy as np
 import glob
 
@@ -54,8 +54,9 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
 
         #print("sigma_scale_min :", sigma_scale_min)
         #print("sigma_scale_max :", sigma_scale_max)
-        print("f_min = {}, f_max = {}".format(f_min, f_max))
-        print("t_min = {}, t_max = {}".format(t_min, t_max))
+
+        #print("f_min = {}, f_max = {}".format(f_min, f_max))
+        #print("t_min = {}, t_max = {}".format(t_min, t_max))
 
         # generate samples
         for idx in range(n_samples):
@@ -73,7 +74,7 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
                 f_offset = 0.4 * f_max
                 t_offset = 0.4 * t_max
             else:
-                # TODO:
+                # TODO: this is an important change!!!!
                 f_offset = torch_random_uniform([f_min, f_max])
                 t_offset = torch_random_uniform([t_min, t_max])
 

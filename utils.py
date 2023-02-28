@@ -1,6 +1,6 @@
+import torch
 import numpy as np
 import os
-import torch
 import tqdm
 
 import models
@@ -17,13 +17,13 @@ def get_config_by_row(row):
 def get_dataset_by_config(config):
     if config['dataset_name'] == 'esc50':
         dataset = datasets.ESC50Dataset(
-            source_dir    = '/home/john/gits/differentiable-time-frequency-transforms/data/esc50',
+            source_dir    = '/home/martinsson/gits/differentiable-time-frequency-transforms/data/esc50',
             resample_rate = config['resample_rate']
         )
 
     elif config['dataset_name'] == 'audio_mnist':
         dataset = datasets.AudioMNISTDataset(
-            source_dir    = '/home/john/gits/differentiable-time-frequency-transforms/data/audio-mnist',
+            source_dir    = '/home/martinsson/gits/differentiable-time-frequency-transforms/data/audio-mnist',
         )
 
     else:
@@ -94,6 +94,7 @@ def get_model_by_config(config):
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
             optimized  = config['optimized'],
+            normalize_window = config['normalize_window'],
         )
     elif config['model_name'] == 'non_linear_net':
         net = models.NonLinearNet(
@@ -103,6 +104,7 @@ def get_model_by_config(config):
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
             optimized  = config['optimized'],
+            normalize_window = config['normalize_window'],
         )
     elif config['model_name'] == 'mlp_net':
         net = models.MlpNet(
@@ -112,6 +114,7 @@ def get_model_by_config(config):
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
             optimized  = config['optimized'],
+            normalize_window = config['normalize_window'],
         )
     elif config['model_name'] == 'conv_net':
         net = models.ConvNet(
@@ -121,6 +124,7 @@ def get_model_by_config(config):
             size       = (config['n_points']+1, config['n_points']+1),
             hop_length = config['hop_length'],
             optimized  = config['optimized'],
+            normalize_window = config['normalize_window'],
         )
     elif config['model_name'] == 'mel_linear_net':
         net = models.MelLinearNet(
@@ -133,6 +137,7 @@ def get_model_by_config(config):
             hop_length  = config['hop_length'],
             optimized   = config['optimized'],
             energy_normalize = config['energy_normalize'],
+            normalize_window = config['normalize_window'],
         )
     elif config['model_name'] == 'mel_mlp_net':
         net = models.MelMlpNet(
@@ -145,6 +150,7 @@ def get_model_by_config(config):
             hop_length  = config['hop_length'],
             optimized   = config['optimized'],
             energy_normalize = config['energy_normalize'],
+            normalize_window = config['normalize_window'],
         )
     elif config['model_name'] == 'mel_conv_net':
         net = models.MelConvNet(
@@ -157,6 +163,7 @@ def get_model_by_config(config):
             hop_length  = config['hop_length'], #int(config['resample_rate'] * config['hop_time_s']),
             optimized   = config['optimized'], #True,
             energy_normalize = config['energy_normalize'],
+            normalize_window = config['normalize_window'],
         )
 
     else:

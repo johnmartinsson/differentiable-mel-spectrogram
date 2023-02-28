@@ -87,6 +87,7 @@ def main():
             'init_lambd',
             'lr_tf',
             'trainable',
+            'normalize_window',
             'model_name',
         ],
         max_column_length = 10
@@ -102,7 +103,7 @@ def main():
             verbose=1,
             progress_reporter = reporter,
             name              = args.name,
-            local_dir         = '/mnt/storage_1/john/ray_results/',
+            local_dir         = '/home/martinsson/ray_results/',
         ),
 	tune_config = tune.TuneConfig(
 	    num_samples = args.num_samples,

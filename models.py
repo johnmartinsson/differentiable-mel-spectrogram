@@ -6,7 +6,7 @@ import torchaudio
 import time_frequency as tf
 
 class SpectrogramLayer(nn.Module):
-    def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(SpectrogramLayer, self).__init__()
         
         self.hop_length = hop_length
@@ -14,6 +14,7 @@ class SpectrogramLayer(nn.Module):
         self.device     = device
         self.size       = size #(512, 1024)
         self.optimized  = optimized
+        self.normalize_window = normalize_window
         
     def forward(self, x):
     
@@ -26,7 +27,7 @@ class SpectrogramLayer(nn.Module):
         
         for idx in range(batch_size):
             # TODO: norm?
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length, norm=False)
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length, norm=self.normalize_window)
 
             #if self.optimized:
             #    spectrogram = F.interpolate(torch.unsqueeze(torch.unsqueeze(spectrogram, axis=0), axis=0), size=(self.size[0], self.size[1]))
@@ -37,13 +38,14 @@ class SpectrogramLayer(nn.Module):
         return spectrograms
 
 class MelSpectrogramLayer(nn.Module):
-    def __init__(self, init_lambd, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False):
+    def __init__(self, init_lambd, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False, normalize_window=False):
         super(MelSpectrogramLayer, self).__init__()
         
         self.hop_length = hop_length
         self.lambd      = nn.Parameter(init_lambd)
         self.device     = device
         self.optimized  = optimized
+        self.normalize_window = normalize_window
 
         self.f_min = f_min
         self.f_max = f_max if f_max is not None else sample_rate // 2
@@ -59,7 +61,7 @@ class MelSpectrogramLayer(nn.Module):
         (batch_size, n_points) = x.shape
         mel_spectrograms = torch.empty((batch_size, 1, self.n_freq, self.n_time), dtype=torch.float32).to(self.device)
         for idx in range(batch_size):
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), device=self.device, optimized=self.optimized, hop_length=self.hop_length, norm=False)
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), device=self.device, optimized=self.optimized, hop_length=self.hop_length, norm=self.normalize_window)
 
             (n_freq, _) = spectrogram.shape
 
@@ -80,9 +82,9 @@ class MelSpectrogramLayer(nn.Module):
         return mel_spectrograms
 
 class MelLinearNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
         super(MelLinearNet, self).__init__()
-        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, norm=normalize_window)
         self.device = device
         self.size = (n_mels, n_points // hop_length + 1)
         self.energy_normalize = energy_normalize
@@ -102,7 +104,7 @@ class MelLinearNet(nn.Module):
         return x, s
 
 class MelMlpNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
         super(MelMlpNet, self).__init__()
         self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         self.device = device
@@ -127,7 +129,7 @@ class MelMlpNet(nn.Module):
         return x, s
  
 class MelConvNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
         super(MelConvNet, self).__init__()
         self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized)
         
@@ -166,9 +168,9 @@ class MelConvNet(nn.Module):
         return x, s
 
 class LinearNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(LinearNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
         self.device = device
         self.size = size
         
@@ -183,9 +185,9 @@ class LinearNet(nn.Module):
         return x, s
 
 class NonLinearNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(NonLinearNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
         self.device = device
         self.size = size
         
@@ -205,9 +207,9 @@ class NonLinearNet(nn.Module):
         return x, s
 
 class MlpNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(MlpNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
         self.device = device
         self.size = size
         
@@ -224,9 +226,9 @@ class MlpNet(nn.Module):
         return x, s
 
 class ShallowConvNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(ShallowConvNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
         
         self.device = device
         self.size = size
@@ -255,9 +257,9 @@ class ShallowConvNet(nn.Module):
         return x, s
 
 class ConvNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(ConvNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length)
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
         
         self.device = device
         self.size = size
