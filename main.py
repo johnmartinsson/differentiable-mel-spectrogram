@@ -70,11 +70,17 @@ def main():
     args = parser.parse_args()
 
     # hyperparamter search space
+    if "audio_mnist" in args.name:
+        search_space = search_spaces.audio_mnist(args.max_epochs)
+    elif "time_frequency" in args.name:
+        search_space = search_spaces.time_frequency(args.max_epochs)
+    else:
+        raise ValueError("search space not found ...")
+
     #search_space = search_spaces.development_space(args.max_epochs)
     #search_space = search_spaces.time_frequency_lambda_search_linear(args.max_epochs)
-
     #search_space = search_spaces.development_space_esc50(args.max_epochs)
-    search_space = search_spaces.development_space_audio_mnist(args.max_epochs)
+    #search_space = search_spaces.development_space_audio_mnist(args.max_epochs)
 
     # results terminal reporter
     reporter = CLIReporter(
@@ -87,16 +93,14 @@ def main():
         ],
         parameter_columns = [
             'init_lambd',
-            'lr_tf',
             'trainable',
-            'normalize_window',
             'model_name',
+            'center_offset',
         ],
         max_column_length = 10
     )
 
     trainable_with_resources = tune.with_resources(run_experiment, {"cpu" : 2.0, "gpu": 0.25})
-    #trainable_with_resources = tune.with_resources(run_experiment, {"cpu" : 8.0, "gpu": 1.00})
 
     tuner = tune.Tuner(
         trainable_with_resources,
