@@ -4,7 +4,7 @@ def development_space_audio_mnist(max_epochs):
     resample_rate = 8000
     search_space = {
         # model
-        'model_name' : 'mel_linear_net', #tune.grid_search(['mel_mlp_net', 'mel_linear_net']),
+        'model_name' : tune.grid_search(['mel_linear_net', 'mel_conv_net']),
         'n_mels' : 128,
         'hop_length' :int(resample_rate * 0.010),
         'energy_normalize' : True,
@@ -18,7 +18,7 @@ def development_space_audio_mnist(max_epochs):
         'batch_size' : 64,
         'trainable' : tune.grid_search([True, False]),
         'max_epochs' : max_epochs,
-        'patience' : 10,
+        'patience' : 5,
         'device' : 'cuda:0',
         
         # dataset
@@ -150,6 +150,39 @@ def time_frequency_lambda_search_linear(max_epochs):
         'noise_std'     : 0.5,
         'init_lambd'    : tune.grid_search([x * sigma_ref for x in [0.2, 0.4, 0.6, 0.8, 1.0, 1.4, 1.8, 2.2, 2.6]]),
         #'init_lambd'    : tune.grid_search([x * sigma_ref for x in [0.25, 1.0, 3.0]]),
+        'n_samples'     : 5000, 
+        'sigma_ref'     : sigma_ref,
+        'dataset_name'  : 'time_frequency', 
+        'center_offset' : False,
+    }
+
+    return search_space
+
+def time_frequency_lambda_search_conv_and_linear(max_epochs):
+    sigma_ref = 6.38
+
+    search_space = {
+        # model
+        'model_name' : 'linear_net', #tune.grid_search(['linear_net', 'conv_net']),
+        'hop_length' : 1,
+        'optimized'  : False,
+        'normalize_window' : True,
+
+        # training
+        'optimizer_name' : 'sgd',
+        'lr_model'       : 2e-3, 
+        'lr_tf'          : 1e-1,
+        'batch_size'     : 128,
+        'trainable'      : tune.grid_search([True, False]),
+        'max_epochs'     : max_epochs,
+        'patience'       : 1,
+        'device'         : 'cuda:0',
+        
+        # dataset
+        'n_points'      : 128,
+        'noise_std'     : 0.5,
+        #'init_lambd'    : tune.grid_search([x * sigma_ref for x in [0.2, 0.4, 0.6, 0.8, 1.0, 1.4, 1.8, 2.2, 2.6]]),
+        'init_lambd'    : tune.grid_search([x * sigma_ref for x in [0.25, 0.5, 1.0, 1.5, 2.0, 3.0]]),
         'n_samples'     : 5000, 
         'sigma_ref'     : sigma_ref,
         'dataset_name'  : 'time_frequency', 

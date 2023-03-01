@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchaudio
+#import torchaudio
 
 import time_frequency as tf
 
@@ -140,12 +140,9 @@ class MelConvNet(nn.Module):
         self.hidden_state = 32
         
         self.conv1 = nn.Conv2d(1, self.hidden_state, 5, padding='same')
-        self.fc1 = nn.Linear(self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2), self.hidden_state)
+        self.fc1 = nn.Linear(self.hidden_state * (self.size[0]) * (self.size[1]), self.hidden_state)
         self.fc2 = nn.Linear(self.hidden_state, n_classes)
 
-        self.pool = nn.MaxPool2d(2, 2)
-        self.dropout = nn.Dropout(p=0.2)
-        
     def forward(self, x):
         # compute spectrograms
         s = self.spectrogram_layer(x)
@@ -157,31 +154,12 @@ class MelConvNet(nn.Module):
         # TODO: residual layers?
         x = self.conv1(s)
         x = F.relu(x)
-        x = self.pool(x)
 
-        x = x.view(-1, self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2))
+        x = x.view(-1, self.hidden_state * (self.size[0]) * (self.size[1]))
         x = self.fc1(x)
         x = F.relu(x)
-        x = self.dropout(x)
         x = self.fc2(x)
 
-        return x, s
-
-class LinearNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
-        super(LinearNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
-        self.device = device
-        self.size = size
-        
-        self.fc = nn.Linear(size[0] * size[1], n_classes)
-
-    def forward(self, x):
-        # compute spectrograms
-        s = self.spectrogram_layer(x)
-        #x = F.dropout(s.view(-1, self.size[0] * self.size[1]), p=0.2)
-        x = s.view(-1, self.size[0] * self.size[1])
-        x = self.fc(x)
         return x, s
 
 class NonLinearNet(nn.Module):
@@ -256,6 +234,24 @@ class ShallowConvNet(nn.Module):
 
         return x, s
 
+class LinearNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
+        super(LinearNet, self).__init__()
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
+        
+        self.device = device
+        self.size = size
+        
+        self.fc = nn.Linear(size[0] * size[1], n_classes)
+
+    def forward(self, x):
+        # compute spectrograms
+        s = self.spectrogram_layer(x)
+        #x = F.dropout(s.view(-1, self.size[0] * self.size[1]), p=0.2)
+        x = s.view(-1, self.size[0] * self.size[1])
+        x = self.fc(x)
+        return x, s
+
 class ConvNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(ConvNet, self).__init__()
@@ -267,11 +263,10 @@ class ConvNet(nn.Module):
         self.hidden_state = 32
         
         self.conv1 = nn.Conv2d(1, self.hidden_state, 5, padding='same')
-        self.fc1 = nn.Linear(self.hidden_state * (size[0] // 2) * (size[1] // 2), self.hidden_state)
+        self.fc1 = nn.Linear(self.hidden_state * (size[0]) * (size[1]), self.hidden_state)
         self.fc2 = nn.Linear(self.hidden_state, n_classes)
 
-        self.pool = nn.MaxPool2d(2, 2)
-        self.dropout = nn.Dropout(p=0.2)
+        #self.dropout = nn.Dropout(p=0.2)
         
     def forward(self, x):
         # compute spectrograms
@@ -280,12 +275,11 @@ class ConvNet(nn.Module):
         # TODO: residual layers?
         x = self.conv1(s)
         x = F.relu(x)
-        x = self.pool(x)
 
-        x = x.view(-1, self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2))
+        x = x.view(-1, self.hidden_state * (self.size[0]) * (self.size[1]))
         x = self.fc1(x)
         x = F.relu(x)
-        x = self.dropout(x)
+        #x = self.dropout(x)
         x = self.fc2(x)
 
         return x, s
