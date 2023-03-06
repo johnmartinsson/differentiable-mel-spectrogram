@@ -1,4 +1,4 @@
-# Differentiable time-frequency transforms
+# Differentiable Mel spectrogram
 
 This README.md explains how to reproduce the main results in the paper
 
