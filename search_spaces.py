@@ -23,9 +23,10 @@ def audio_mnist(max_epochs):
         
         # dataset
         'resample_rate' : resample_rate,
-        'init_lambd' : tune.grid_search([(resample_rate*x)/6 for x in [0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]]),
+        'init_lambd' : tune.grid_search([(resample_rate*x)/6 for x in [0.01, 0.025, 0.05, 0.1, 0.2, 0.4]]),
         'dataset_name' : 'audio_mnist', 
         'n_points' : 5500, # hard coded zero-padding
+        'source_dir' : '/home/john/gits/differentiable-time-frequency-transforms/data/audio-mnist', # set to appropriate directory
     }
 
     return search_space
