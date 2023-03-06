@@ -75,7 +75,7 @@ def produce_data_example_plot():
     plt.savefig('results/figures/data_example.pdf', bbox_inches='tight')
         
 
-def produce_accuracy_plot(experiment_path, split='valid'):
+def produce_accuracy_plot(experiment_path, data_dir, split='valid'):
     if 'audio_mnist' in experiment_path:
         dataset_name = 'audio_mnist'
         model_names = ['mel_linear_net', 'mel_conv_net']
@@ -91,7 +91,7 @@ def produce_accuracy_plot(experiment_path, split='valid'):
     if split == 'test':
         # make test predictions if they do not exist
         if not os.path.exists("results/{}.csv".format(dataset_name)):
-            predict_test(df, dataset_name)
+            predict_test(df, dataset_name, data_dir)
 
         # load test predictions
         df = pd.read_csv("results/{}.csv".format(dataset_name))
@@ -156,7 +156,7 @@ def produce_accuracy_plot(experiment_path, split='valid'):
     plt.tight_layout()
     plt.savefig('results/figures/{}_{}.pdf'.format(split, dataset_name), bbox_inches='tight')
 
-def predict_test(df, dataset_name):
+def predict_test(df, dataset_name, data_dir):
     df['test_accuracy'] = 0
     predictionss = []
     labelss = []
@@ -167,7 +167,7 @@ def predict_test(df, dataset_name):
         #print(row)
         #print("Model = ", row[1]['config/model_name'])
         #print("reported best valid acc: ", row[1]['best_valid_acc'])
-        labels, predictions = utils.get_predictions_by_row(row, split='test', device='cuda:1')
+        labels, predictions = utils.get_predictions_by_row(row, data_dir, split='test', device='cuda:1')
         test_acc = np.mean(labels == predictions)
         df.at[idx, 'test_accuracy'] = test_acc
         #print("test acc: ", test_acc)
@@ -183,8 +183,9 @@ def predict_test(df, dataset_name):
 
 def main():
     parser = argparse.ArgumentParser(description='Produce plots.')
-    parser.add_argument('-d','--ray_root_dir', help='The name of the root directory to save the ray search results.', required=True, type=str)
-    parser.add_argument('-s','--split', help='The name of the split [train, valid].', required=True, type=str)
+    parser.add_argument('--ray_root_dir', help='The name of the root directory to save the ray search results.', required=True, type=str)
+    parser.add_argument('--data_dir', help='The absolute path to the audio-mnist data directory.', required=True, type=str)
+    parser.add_argument('--split', help='The name of the split [train, valid].', required=True, type=str)
     args = parser.parse_args()
 
     if not os.path.exists('./results/figures'):
@@ -195,11 +196,11 @@ def main():
 
     # produce figure 2
     experiment_path = os.path.join(args.ray_root_dir, 'time_frequency')
-    produce_accuracy_plot(experiment_path, args.split)
+    produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
 
     # produce figure 3
     experiment_path = os.path.join(args.ray_root_dir, 'audio_mnist')
-    produce_accuracy_plot(experiment_path, args.split)
+    produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
 
     print("")
     print("the plots can now be be found in ./results/figures")

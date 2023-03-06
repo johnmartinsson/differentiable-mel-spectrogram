@@ -165,7 +165,7 @@ def get_model_by_config(config):
 
     return net
 
-def get_predictions_by_row(row, device='cpu', split='valid'):
+def get_predictions_by_row(row, data_dir, device='cpu', split='valid'):
     config = get_config_by_row(row)
     config['device'] = device
     logdir = row[1]['logdir']
@@ -176,7 +176,7 @@ def get_predictions_by_row(row, device='cpu', split='valid'):
     net.to(device)
 
     # load dataset
-    trainset,validset,testset = get_dataset_by_config(config)
+    trainset,validset,testset = get_dataset_by_config(config, data_dir)
 
     if split == 'valid':
         dataset = validset
