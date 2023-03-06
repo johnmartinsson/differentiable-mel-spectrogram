@@ -17,13 +17,13 @@ def get_config_by_row(row):
 def get_dataset_by_config(config):
     if config['dataset_name'] == 'esc50':
         dataset = datasets.ESC50Dataset(
-            source_dir    = '/home/john/gits/differentiable-time-frequency-transforms/data/esc50',
+            source_dir    = config['source_dir'], 
             resample_rate = config['resample_rate']
         )
 
     elif config['dataset_name'] == 'audio_mnist':
         dataset = datasets.AudioMNISTDataset(
-            source_dir    = '/home/john/gits/differentiable-time-frequency-transforms/data/audio-mnist',
+            source_dir    = config['source_dir'], 
         )
 
     else:
