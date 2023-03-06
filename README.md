@@ -16,8 +16,12 @@ This README.md explains how to reproduce the main results in the paper
     
 # Setup environment
 
-    # TODO: Add requirements.txt file, or easy command to run....
-    conda install requirements.txt
+
+    conda activate torch
+    conda install numpy tqdm pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
+    conda install -c conda-forge ray-tune librosa
+
+    
 
 # Run experiments
 
