@@ -47,11 +47,6 @@ The code uses 0.25 GPUs and 2 CPUs per experiment, edit the tune.with_resources 
 
 # Produce figures
 
-Validation data.
-
-    python produce_figures.py --name=time_frequency --split=valid --ray_root_dir=./ray_results/
-    python produce_figures.py --name=audio_mnist --split=valid --ray_root_dir=./ray_results/
-
 Test data. This requires looping through all model configurations and making predictions on the test set, which takes a couple of minutes on the GPU. The DataFrame is stored in the ./results directory as well as the predictions and labels for each model, which are loaded the next time the script is run to prevent re-running all test predictions.
 
     # figure 2
@@ -61,6 +56,11 @@ Test data. This requires looping through all model configurations and making pre
     python produce_figures.py --name=audio_mnist --split=test --ray_root_dir=./ray_results/
     
 Produces the figures used in the paper and puts them in the ./results/figures directory.
+
+Validation data.
+
+    python produce_figures.py --name=time_frequency --split=valid --ray_root_dir=./ray_results/
+    python produce_figures.py --name=audio_mnist --split=valid --ray_root_dir=./ray_results/
 
 # Explore the datasets
 
