@@ -66,7 +66,8 @@ def main():
     parser = argparse.ArgumentParser(description='Hyperparameter search.')
     parser.add_argument('-s','--num_samples', help='The number of hyperparameter samples.', required=True, type=int)
     parser.add_argument('-e','--max_epochs', help='The maximum number of epochs.', required=True, type=int)
-    parser.add_argument('-n','--name', help='The name of the hyperparamter search experiment..', required=True, type=str)
+    parser.add_argument('-n','--name', help='The name of the hyperparamter search experiment.', required=True, type=str)
+    parser.add_argument('-d','--ray_root_dir', help='The name of the directory to save the ray search results.', required=True, type=str)
     args = parser.parse_args()
 
     # hyperparamter search space
@@ -109,7 +110,7 @@ def main():
             verbose=1,
             progress_reporter = reporter,
             name              = args.name,
-            local_dir         = '/mnt/storage_1/john/ray_results/',
+            local_dir         = args.ray_root_dir, 
         ),
 	tune_config = tune.TuneConfig(
 	    num_samples = args.num_samples,
