@@ -35,11 +35,11 @@ All experiments.
 
 Only synthetic data.
 
-    python main.py --num_samples=5 --max_epochs=10000 --name=time_frequency --ray_root_dir=./ray_results/ --data_dir=$(pwd)/data/audio-mnist
+    python main.py --num_samples=5 --max_epochs=10000 --name=time_frequency --ray_root_dir=$(pwd)/ray_results/ --data_dir=$(pwd)/data/audio-mnist
    
 Only Free Spoken Digit dataset.
 
-    python main.py --num_samples=5 --max_epochs=10000 --name=audio_mnist --ray_root_dir=./ray_results/ --data_dir=$(pwd)/data/audio-mnist
+    python main.py --num_samples=5 --max_epochs=10000 --name=audio_mnist --ray_root_dir=$(pwd)/ray_results/ --data_dir=$(pwd)/data/audio-mnist
     
 The code uses 0.25 GPUs and 2 CPUs per experiment, edit the tune.with_resources line in main.py if you want to use more or less GPUs or CPUs. Defaults to cuda:1 device.
 
@@ -48,9 +48,9 @@ The code uses 0.25 GPUs and 2 CPUs per experiment, edit the tune.with_resources 
 Test data. This requires looping through all model configurations and making predictions on the test set, which takes a couple of minutes on the GPU. The DataFrame is stored in the ./results directory as well as the predictions and labels for each model, which are loaded the next time the script is run to prevent re-running all test predictions.
 
     # produces all figures in the paper
-    python produce_figures.py --split=test --ray_root_dir=./ray_results/ --data_dir=$(pwd)/data/audio-mnist
+    python produce_figures.py --split=test --ray_root_dir=$(pwd)/ray_results/ --data_dir=$(pwd)/data/audio-mnist
     
-Produces the figures used in the paper and puts them in the ./results/figures directory.
+Produces the figures used in the paper and puts them in the $(pwd)/results/figures directory.
 
 # Explore the datasets and models
 
