@@ -5,6 +5,11 @@ TODO: Update code and replace sigma with lambda in variable names. To be consist
 This README.md explains how to reproduce the main results in the paper
 
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
+    
+# Clone repository
+
+    git clone https://github.com/johnmartinsson/differentiable-time-frequency-transforms.git
+    cd differentiable-time-frequency-transforms
 
 # Download AudioMNIST
     
