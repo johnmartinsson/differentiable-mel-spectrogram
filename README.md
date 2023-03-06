@@ -11,7 +11,7 @@ This README.md explains how to reproduce the main results in the paper
     git clone https://github.com/johnmartinsson/differentiable-time-frequency-transforms.git
     cd differentiable-time-frequency-transforms
 
-# Download AudioMNIST
+# Download the Free Spoken Digits dataset
     
     # DOI: 10.5281/zenodo.1342401
     wget https://zenodo.org/record/1342401/files/Jakobovski/free-spoken-digit-dataset-v1.0.8.zip
