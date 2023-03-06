@@ -48,7 +48,7 @@ The code uses 0.25 GPUs and 2 CPUs per experiment, edit the tune.with_resources 
 Test data. This requires looping through all model configurations and making predictions on the test set, which takes a couple of minutes on the GPU. The DataFrame is stored in the ./results directory as well as the predictions and labels for each model, which are loaded the next time the script is run to prevent re-running all test predictions.
 
     # produces all figures in the paper
-    python produce_figures.py --split=test --ray_root_dir=./ray_results/
+    python produce_figures.py --split=test --ray_root_dir=./ray_results/ --data_dir=$(pwd)/data/audio-mnist
     
 Produces the figures used in the paper and puts them in the ./results/figures directory.
 
