@@ -5,6 +5,7 @@ TODO: Update code and replace sigma with lambda in variable names. To be consist
 This README.md explains how to reproduce the main results in the paper
 
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
+
 # Download AudioMNIST
     
     # DOI: 10.5281/zenodo.1342401
@@ -12,6 +13,8 @@ This README.md explains how to reproduce the main results in the paper
     unzip free-spoken-digit-dataset-v1.0.8.zip
     mkdir data
     mv Jakobovski-free-spoken-digit-dataset-e9e1155/ data/audio-mnist
+    
+Edit the "audio_mnist" method in the file search_spaces.py, and update the 'source_dir' variable to point to the ahsolute data/audio-mnist directory.
 
 # Setup environment
 
