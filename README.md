@@ -6,7 +6,7 @@ This README.md explains how to reproduce the main results in the paper
     
 # Clone repository
 
-    git clone https://github.com/johnmartinsson/differentiable-time-frequency-transforms.git
+    git clone https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
     cd differentiable-time-frequency-transforms
 
 # Download the Free Spoken Digits dataset
