@@ -14,10 +14,9 @@ This README.md explains how to reproduce the main results in the paper
     mkdir data
     mv Jakobovski-free-spoken-digit-dataset-e9e1155/ data/audio-mnist
     
-Edit the "audio_mnist" method in the file search_spaces.py, and update the 'source_dir' variable to point to the ahsolute data/audio-mnist directory.
-
 # Setup environment
 
+    # TODO: Add requirements.txt file, or easy command to run....
     conda install requirements.txt
 
 # Run experiments
