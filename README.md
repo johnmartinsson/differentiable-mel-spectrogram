@@ -10,6 +10,8 @@ This README.md explains how to reproduce the main results in the paper
     cd differentiable-mel-spectrogram
 
 # Download the Free Spoken Digits dataset
+
+### TODO: Add download_data.sh script
     
     # DOI: 10.5281/zenodo.1342401
     wget https://zenodo.org/record/1342401/files/Jakobovski/free-spoken-digit-dataset-v1.0.8.zip
