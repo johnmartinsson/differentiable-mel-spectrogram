@@ -78,11 +78,6 @@ def main():
     else:
         raise ValueError("search space not found ...")
 
-    #search_space = search_spaces.development_space(args.max_epochs)
-    #search_space = search_spaces.time_frequency_lambda_search_linear(args.max_epochs)
-    #search_space = search_spaces.development_space_esc50(args.max_epochs)
-    #search_space = search_spaces.development_space_audio_mnist(args.max_epochs)
-
     # results terminal reporter
     reporter = CLIReporter(
         metric_columns=[
