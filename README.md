@@ -24,7 +24,7 @@ This README.md explains how to reproduce the main results in the paper
     conda activate torchaudio
     
     # solving these environments are unfortunately a bit slow... have patience
-    conda install numpy tqdm pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
+    conda install numpy tqdm seaborn pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
     conda install -c conda-forge ray-tune librosa
 
 # Run experiments
