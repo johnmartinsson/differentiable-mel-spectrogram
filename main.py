@@ -14,9 +14,9 @@ import train
 import utils
 import search_spaces
 
-def run_experiment(config):
+def run_experiment(config, data_dir):
     # load dataset
-    trainset, validset, _ = utils.get_dataset_by_config(config)
+    trainset, validset, _ = utils.get_dataset_by_config(config, data_dir)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True, num_workers=2)
     validloader = torch.utils.data.DataLoader(validset, batch_size=config['batch_size'], shuffle=False, num_workers=2)
 
@@ -64,10 +64,11 @@ def run_experiment(config):
 def main():
 
     parser = argparse.ArgumentParser(description='Hyperparameter search.')
-    parser.add_argument('-s','--num_samples', help='The number of hyperparameter samples.', required=True, type=int)
-    parser.add_argument('-e','--max_epochs', help='The maximum number of epochs.', required=True, type=int)
-    parser.add_argument('-n','--name', help='The name of the hyperparamter search experiment.', required=True, type=str)
-    parser.add_argument('-d','--ray_root_dir', help='The name of the directory to save the ray search results.', required=True, type=str)
+    parser.add_argument('--num_samples', help='The number of hyperparameter samples.', required=True, type=int)
+    parser.add_argument('--max_epochs', help='The maximum number of epochs.', required=True, type=int)
+    parser.add_argument('--name', help='The name of the hyperparamter search experiment.', required=True, type=str)
+    parser.add_argument('--ray_root_dir', help='The name of the directory to save the ray search results.', required=True, type=str)
+    parser.add_argument('--data_dir', help='The absolute path to the audio-mnist directory.', required=True, type=str)
     args = parser.parse_args()
 
     # hyperparamter search space
@@ -77,6 +78,7 @@ def main():
         search_space = search_spaces.time_frequency(args.max_epochs)
     else:
         raise ValueError("search space not found ...")
+
 
     # results terminal reporter
     reporter = CLIReporter(
@@ -96,7 +98,9 @@ def main():
         max_column_length = 10
     )
 
-    trainable_with_resources = tune.with_resources(run_experiment, {"cpu" : 2.0, "gpu": 0.25})
+    run_experiment_fn = partial(run_experiment, data_dir=args.data_dir)
+
+    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 2.0, "gpu": 0.25})
 
     tuner = tune.Tuner(
         trainable_with_resources,

@@ -14,16 +14,10 @@ def get_config_by_row(row):
             config[k.split('/')[1]] = r[k]
     return config
 
-def get_dataset_by_config(config):
-    if config['dataset_name'] == 'esc50':
-        dataset = datasets.ESC50Dataset(
-            source_dir    = config['source_dir'], 
-            resample_rate = './data/esc50',
-        )
-
-    elif config['dataset_name'] == 'audio_mnist':
+def get_dataset_by_config(config, data_dir):
+    if config['dataset_name'] == 'audio_mnist':
         dataset = datasets.AudioMNISTDataset(
-            source_dir    = './data/audio-mnist',
+            source_dir    = data_dir,
         )
 
     else:
