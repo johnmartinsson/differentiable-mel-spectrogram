@@ -18,12 +18,12 @@ def get_dataset_by_config(config):
     if config['dataset_name'] == 'esc50':
         dataset = datasets.ESC50Dataset(
             source_dir    = config['source_dir'], 
-            resample_rate = config['resample_rate']
+            resample_rate = './data/esc50',
         )
 
     elif config['dataset_name'] == 'audio_mnist':
         dataset = datasets.AudioMNISTDataset(
-            source_dir    = config['source_dir'], 
+            source_dir    = './data/audio-mnist',
         )
 
     else:
