@@ -12,8 +12,70 @@ import seaborn as sns
 import pandas as pd
 
 import utils
+import datasets
+import time_frequency as tf
 
-def produce_plots(experiment_path, split='valid'):
+def produce_data_example_plot():
+    # data
+    sigma_ref = torch.tensor(6.38)
+    dataset = datasets.GaussPulseDatasetTimeFrequency(
+        sigma     = sigma_ref,
+        n_points  = 128, 
+        noise_std = torch.tensor(.0),
+        n_samples = 500,
+        f_center_max_offset=0,
+        t_center_max_offset=0,
+        demo=True, # disables a lot of variability, more pedagogical figure
+    )
+
+    plt.rcParams['text.usetex'] = True
+
+    short_scale = 0.2
+    long_scale = 5
+
+    idx = 0
+    n_classes = 3
+    count = 0
+
+    lambda_param = sigma_ref
+
+    fig, ax = plt.subplots(3, 3, figsize=(8,3*2.7))
+
+    while True:
+    #for idx in range(20):
+        x, y = dataset[idx]
+            
+        if count % n_classes == y:
+            count += 1
+            t1, f1, t2, f2 = dataset.locs[idx]
+            
+            s, w = tf.differentiable_spectrogram(x-torch.mean(x), lambd=lambda_param, return_window=True)
+            utils.plot_spectrogram(s.detach().numpy(), ax[count-1, 0], decorate_axes=False)
+
+            s, w = tf.differentiable_spectrogram(x-torch.mean(x), lambd=lambda_param*short_scale, return_window=True)
+            utils.plot_spectrogram(s.detach().numpy(), ax[count-1, 1], decorate_axes=False)
+            
+            s, w = tf.differentiable_spectrogram(x-torch.mean(x), lambd=lambda_param*long_scale, return_window=True)
+            utils.plot_spectrogram(s.detach().numpy(), ax[count-1, 2], decorate_axes=False)
+
+            idx += 1
+        else:
+            idx += 1
+        
+        if count > 2:
+            break
+                 
+    scales = [1.0, short_scale, long_scale]
+    for i in range(3):
+        ax[i, 0].set_ylabel('normalized frequency')
+        ax[2, i].set_xlabel('time')
+        ax[0, i].set_title(r'$\lambda = {0:.1f}$'.format(lambda_param * scales[i]))
+        
+    plt.tight_layout()
+    plt.savefig('results/figures/data_example.pdf', bbox_inches='tight')
+        
+
+def produce_accuracy_plot(experiment_path, split='valid'):
     if 'audio_mnist' in experiment_path:
         dataset_name = 'audio_mnist'
         model_names = ['mel_linear_net', 'mel_conv_net']
@@ -25,8 +87,6 @@ def produce_plots(experiment_path, split='valid'):
     result = tuner.fit()
     df = result.get_dataframe()
 
-    if not os.path.exists('./results/figures'):
-        os.makedirs('./results/figures')
 
     if split == 'test':
         # make test predictions if they do not exist
@@ -123,14 +183,27 @@ def predict_test(df, dataset_name):
 
 def main():
     parser = argparse.ArgumentParser(description='Produce plots.')
-    parser.add_argument('-n','--name', help='The name of the hyperparamter search experiment.', required=True, type=str)
     parser.add_argument('-d','--ray_root_dir', help='The name of the root directory to save the ray search results.', required=True, type=str)
     parser.add_argument('-s','--split', help='The name of the split [train, valid].', required=True, type=str)
     args = parser.parse_args()
 
-    experiment_path = os.path.join(args.ray_root_dir, args.name)
+    if not os.path.exists('./results/figures'):
+        os.makedirs('./results/figures')
 
-    produce_plots(experiment_path, args.split)
+    # produce figure 1
+    produce_data_example_plot()
+
+    # produce figure 2
+    experiment_path = os.path.join(args.ray_root_dir, 'time_frequency')
+    produce_accuracy_plot(experiment_path, args.split)
+
+    # produce figure 3
+    experiment_path = os.path.join(args.ray_root_dir, 'audio_mnist')
+    produce_accuracy_plot(experiment_path, args.split)
+
+    print("")
+    print("the plots can now be be found in ./results/figures")
+
 
 def get_model_title(model_name):
     if model_name == 'conv_net':
