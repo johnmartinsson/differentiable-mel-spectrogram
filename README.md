@@ -22,7 +22,8 @@ This README.md explains how to reproduce the main results in the paper
 # Setup environment
 
 
-    conda activate torch
+    conda create -n torchaudio
+    conda activate torchaudio
     conda install numpy tqdm pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
     conda install -c conda-forge ray-tune librosa
 
