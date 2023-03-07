@@ -7,7 +7,12 @@ This README.md explains how to reproduce the main results in the paper
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
     
 # Setup environment
-This example sets up the environment using Anaconda:
+
+Uing pip:
+    
+    pip install -r requirements.txt
+
+Using Anaconda:
 
     conda create -n torchaudio
     conda activate torchaudio
@@ -17,7 +22,7 @@ This example sets up the environment using Anaconda:
     conda install -c conda-forge ray-tune librosa
     
 # Clone repository
-Clone the repository and change working directory. All commands assume that this is the working directory.
+Clone the 'eusipco2023' branch of the repository and change working directory. All commands assume that this is the working directory.
 
     git clone -b eusipco2023 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
     cd differentiable-mel-spectrogram
