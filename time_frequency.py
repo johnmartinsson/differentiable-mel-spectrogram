@@ -25,17 +25,17 @@ def differentiable_gaussian_window(lambd, window_length, device='cpu', norm=True
     window_norm = window / torch.sqrt(torch.sum(torch.pow(window, 2)))
 
     if norm:
-        #print("returning energy normalized window: ", torch.sum(window_norm))
         return window_norm
     else:
-        #print("returning amplitude normalized window: ", torch.sum(window))
         return window
 
 def differentiable_spectrogram(x, lambd, optimized=False, device='cpu', hop_length=1, return_window=False, norm=False, n_stds=6):
 
     # optimization potentially makes gradients weaker, but faster
     if optimized:
-        # TODO: not sure if this optimization should affect the results as much as it does?
+        # TODO: not sure if this optimization works as intended,
+        # never used in the experiments. Will be become important
+        # for longer signals.
         window_length = next_power_of_2((lambd * n_stds).detach().cpu().numpy())
     else:
         window_length = len(x)
@@ -66,7 +66,9 @@ def next_power_of_2(x):
 
 
 # NOTE: initial time-frequency implementation from scratch,
-# a bit slower than the pytorch implementation
+# a bit slower than the pytorch implementation, kept here
+# if found useful in the future, or simply for educational
+# purposes.
 
 #def stft(x, windows):
 #    dim = (len(x) // 2 + 1, len(windows))

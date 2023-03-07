@@ -22,11 +22,10 @@ class SpectrogramLayer(nn.Module):
         if self.optimized:
             spectrograms = torch.empty((batch_size, 1, self.size[0], self.size[1]), dtype=torch.float32).to(self.device)
         else:
-            # TODO: redundancy in spectrogram, change to n_points // 2 + 1 again?
+            # redundancy in spectrogram
             spectrograms = torch.empty((batch_size, 1, n_points + 1, n_points // self.hop_length + 1), dtype=torch.float32).to(self.device)
         
         for idx in range(batch_size):
-            # TODO: norm?
             spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length, norm=self.normalize_window)
 
             #if self.optimized:
@@ -151,7 +150,6 @@ class MelConvNet(nn.Module):
         if self.energy_normalize:
             s = torch.log(s + 1)
 
-        # TODO: residual layers?
         x = self.conv1(s)
         x = F.relu(x)
 
@@ -223,7 +221,6 @@ class ShallowConvNet(nn.Module):
         # compute spectrograms
         s = self.spectrogram_layer(x)
 
-        # TODO: residual layers?
         x = self.conv1(s)
         x = F.relu(x)
         x = x + s
@@ -272,7 +269,6 @@ class ConvNet(nn.Module):
         # compute spectrograms
         s = self.spectrogram_layer(x)
 
-        # TODO: residual layers?
         x = self.conv1(s)
         x = F.relu(x)
 
