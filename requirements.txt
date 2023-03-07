@@ -7,3 +7,5 @@ seaborn==0.12.2
 torch==1.13.1
 torchaudio==0.13.1
 tqdm==4.64.1
+ray[tune]
+ray[rllib]
