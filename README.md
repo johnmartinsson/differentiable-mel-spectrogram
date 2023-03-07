@@ -1,6 +1,6 @@
 # Differentiable Mel spectrogram
 
-The code in the 'main' branch is subject to change in the future, the exact code used in the paper is kept in a separate branch callend 'eusipco2023'.
+The code in the 'main' branch is subject to change in the future, the exact code used in the paper is kept in a separate branch called 'eusipco2023'.
 
 This README.md explains how to reproduce the main results in the paper
 
