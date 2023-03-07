@@ -22,6 +22,7 @@ which will download the Free Spoken Digits dataset using the following commands:
     unzip free-spoken-digit-dataset-v1.0.8.zip
     mkdir data
     mv Jakobovski-free-spoken-digit-dataset-e9e1155/ data/audio-mnist
+    rm free-spoken-digit-dataset-v1.0.8.zip
     
 # Setup environment
 
