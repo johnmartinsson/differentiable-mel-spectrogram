@@ -9,7 +9,7 @@ This README.md explains how to reproduce the main results in the paper
 # Clone repository
 Clone the repository and change working directory. All commands assume that this is the working directory.
 
-    git clone https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
+    git clone -b eusipco2023 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
     cd differentiable-mel-spectrogram
 
 # Download the Free Spoken Digits dataset
