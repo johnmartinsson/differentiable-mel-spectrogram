@@ -2,6 +2,8 @@
 
 This README.md explains how to reproduce the main results in the paper
 
+    Under review at EUSIPCO 2023.
+    
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
     
 # Clone repository
