@@ -9,14 +9,25 @@ This README.md explains how to reproduce the main results in the paper
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
         
 # Clone repository and setup the environment
+
+## Clone the repository
 Clone the 'eusipco2023' branch of the repository and change working directory. All commands assume that this is the working directory.
 
     git clone -b eusipco2023 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
     cd differentiable-mel-spectrogram
     
-Uing pip:
-    
+## Install the environment
+Using only pip:
+
     pip install -r requirements.txt
+    
+Using conda and pip:
+    
+    conda create -n reproduce
+    conda activate reproduce
+    conda install pip
+    
+    pip3 install -r requirements.txt
 
 Using Anaconda (slower):
 
