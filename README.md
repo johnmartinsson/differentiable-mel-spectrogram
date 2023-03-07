@@ -21,7 +21,7 @@ Using only pip:
 
     pip install -r requirements.txt
     
-Using conda and pip:
+Using conda and pip (tested):
     
     conda create -n reproduce
     conda activate reproduce
@@ -29,10 +29,10 @@ Using conda and pip:
     
     pip3 install -r requirements.txt
 
-Using Anaconda (slower):
+Using Anaconda (tested, slower):
 
-    conda create -n torchaudio
-    conda activate torchaudio
+    conda create -n reproduce
+    conda activate reproduce
     
     # solving these environments are unfortunately a bit slow... have patience
     conda install numpy tqdm seaborn pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
