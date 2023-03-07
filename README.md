@@ -12,7 +12,11 @@ This README.md explains how to reproduce the main results in the paper
 # Download the Free Spoken Digits dataset
 
 ### TODO: Add download_data.sh script
+
+    sh download_data.sh
     
+which will download the Free Spoken Digits dataset using the following commands:
+
     # DOI: 10.5281/zenodo.1342401
     wget https://zenodo.org/record/1342401/files/Jakobovski/free-spoken-digit-dataset-v1.0.8.zip
     unzip free-spoken-digit-dataset-v1.0.8.zip
@@ -21,6 +25,7 @@ This README.md explains how to reproduce the main results in the paper
     
 # Setup environment
 
+This example sets up the environment using Anaconda:
 
     conda create -n torchaudio
     conda activate torchaudio
@@ -30,8 +35,9 @@ This README.md explains how to reproduce the main results in the paper
     conda install -c conda-forge ray-tune librosa
 
 # Run experiments
+The experiments will not reproduce the exact results in the paper, the random seed has never been fixed, but the same trends should of the averages and standard deviations should be observed when re-running the experiments.
 
-All experiments.
+Run all the experiments.
 
     sh run_experiments.sh
 
@@ -46,6 +52,8 @@ Only Free Spoken Digit dataset.
 The code uses 0.25 GPUs and 2 CPUs per experiment, edit the tune.with_resources line in main.py if you want to use more or less GPUs or CPUs. Defaults to cuda:1 device.
 
 # Produce figures
+
+This re-produces all the figures in the paper.
 
 Test data. This requires looping through all model configurations and making predictions on the test set, which takes a couple of minutes on the GPU. The DataFrame is stored in the ./results directory as well as the predictions and labels for each model, which are loaded the next time the script is run to prevent re-running all test predictions.
 
