@@ -18,7 +18,7 @@ Uing pip:
     
     pip install -r requirements.txt
 
-Using Anaconda:
+Using Anaconda (slower):
 
     conda create -n torchaudio
     conda activate torchaudio
