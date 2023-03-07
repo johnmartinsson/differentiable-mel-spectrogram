@@ -96,7 +96,7 @@ Only Free Spoken Digit dataset.
 
     python main.py --num_samples=5 --max_epochs=10000 --name=audio_mnist --ray_root_dir=$(pwd)/ray_results/ --data_dir=$(pwd)/data/audio-mnist
     
-The code uses 0.25 GPUs and 2 CPUs per experiment, edit the tune.with_resources line in main.py if you want to use more or less GPUs or CPUs. Defaults to cuda:0 device.
+The code uses 0.33 GPUs and 2 CPUs per experiment, edit the tune.with_resources line in main.py if you want to use more or less GPUs or CPUs. Defaults to cuda:0 device.
 
 # Produce figures
 
