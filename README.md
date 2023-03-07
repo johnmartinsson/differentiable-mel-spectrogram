@@ -5,13 +5,13 @@ This README.md explains how to reproduce the main results in the paper
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
     
 # Clone repository
+Clone the repository and change working directory. All commands assume that this is the working directory.
 
     git clone https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
     cd differentiable-mel-spectrogram
 
 # Download the Free Spoken Digits dataset
-
-### TODO: Add download_data.sh script
+The Free Spoken Digits dataset can be downloaded using:
 
     sh download_data.sh
     
