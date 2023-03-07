@@ -5,9 +5,13 @@ This README.md explains how to reproduce the main results in the paper
     Under review at EUSIPCO 2023.
     
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
-    
-# Setup environment
+        
+# Clone repository and setup the environment
+Clone the 'eusipco2023' branch of the repository and change working directory. All commands assume that this is the working directory.
 
+    git clone -b eusipco2023 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
+    cd differentiable-mel-spectrogram
+    
 Uing pip:
     
     pip install -r requirements.txt
@@ -20,12 +24,6 @@ Using Anaconda:
     # solving these environments are unfortunately a bit slow... have patience
     conda install numpy tqdm seaborn pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
     conda install -c conda-forge ray-tune librosa
-    
-# Clone repository
-Clone the 'eusipco2023' branch of the repository and change working directory. All commands assume that this is the working directory.
-
-    git clone -b eusipco2023 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
-    cd differentiable-mel-spectrogram
     
 # Do everything in one script
 Run the doit.sh script to download the audio data, run the experiments and produce the plots.
