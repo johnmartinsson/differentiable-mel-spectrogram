@@ -76,7 +76,7 @@ which will download the Free Spoken Digits dataset using the following commands:
     rm free-spoken-digit-dataset-v1.0.8.zip
 
 ## Run experiments
-An experiment is defined as a ray tune search space. The two search spaces presented in the paper are found in search_spaces.py, called audio_mnist and time_frequency. If you want to change the hyper parameter distribution simply modify the search space (e.g., https://docs.ray.io/en/latest/tune/api/search_space.html), or define another search space and update the appropriate line in main.py where the search spaces is loaded.
+An experiment is defined as a ray tune search space. The two search spaces presented in the paper are found in search_spaces.py, called audio_mnist and time_frequency. If you want to change the hyper parameter distribution simply modify the search space (e.g., https://docs.ray.io/en/latest/tune/api/search_space.html), or define another search space and update the appropriate line in main.py where the search space is loaded.
 
 The experiments will not reproduce the exact results in the paper, the random seed has never been fixed, but the same trends should of the averages and standard deviations should be observed when re-running the experiments. (This has been verified a couple of times.)
 
