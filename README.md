@@ -1,4 +1,4 @@
-# Differentiable Mel spectrogram
+# Analysis of the differentiable (Mel) spectrogram as a trainable layer in neural networks
 
 The code in the 'main' branch is subject to change in the future, the exact code used in the paper is kept in a separate branch called 'eusipco2023'.
 
