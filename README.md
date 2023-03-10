@@ -28,15 +28,6 @@ Using conda and pip (tested):
     conda install pip
     
     pip3 install -r requirements.txt
-
-Using Anaconda (tested, slower):
-
-    conda create -n reproduce
-    conda activate reproduce
-    
-    # solving these environments are unfortunately a bit slow... have patience
-    conda install numpy tqdm seaborn pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
-    conda install -c conda-forge ray-tune librosa
     
 # Do everything in one script
 Run the doit.sh script to download the audio data, run the experiments and produce the plots.
