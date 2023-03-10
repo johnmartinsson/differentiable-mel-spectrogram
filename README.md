@@ -59,7 +59,7 @@ The figures are stored in ./results/figures
 That should be all.
 
 # More details
-A bit more details on how to use the code.
+Some details on how to use the code.
 
 ## Download the Free Spoken Digits dataset
 The Free Spoken Digits dataset can be downloaded using:
