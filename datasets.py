@@ -203,10 +203,7 @@ class ESC50Dataset(torch.utils.data.Dataset):
         
         self.xs = []
         self.ys = []
-        #self.categories = []
-        #self.folds = []
         self.sample_rate = None
-
         
         xs_path = os.path.join(source_dir, "{}_xs.npy".format(resample_rate))
         ys_path = os.path.join(source_dir, "{}_ys.npy".format(resample_rate))
@@ -243,5 +240,3 @@ class ESC50Dataset(torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         return self.xs[idx], self.ys[idx]
-
-

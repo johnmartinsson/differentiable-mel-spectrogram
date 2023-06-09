@@ -79,11 +79,15 @@ def produce_accuracy_plot(experiment_path, data_dir, split='valid'):
     if 'audio_mnist' in experiment_path:
         dataset_name = 'audio_mnist'
         model_names = ['mel_linear_net', 'mel_conv_net']
+    elif 'esc50' in experiment_path:
+        dataset_name = 'esc50'
+        model_names = ['mel_linear_net', 'mel_conv_net']
     elif 'time_frequency' in experiment_path:
         dataset_name = 'time_frequency'
         model_names = ['linear_net', 'conv_net']
 
     tuner = tune.Tuner.restore(path=experiment_path)
+    print(experiment_path)
     result = tuner.fit()
     df = result.get_dataframe()
 
@@ -167,7 +171,7 @@ def predict_test(df, dataset_name, data_dir):
         #print(row)
         #print("Model = ", row[1]['config/model_name'])
         #print("reported best valid acc: ", row[1]['best_valid_acc'])
-        labels, predictions = utils.get_predictions_by_row(row, data_dir, split='test', device='cuda:1')
+        labels, predictions = utils.get_predictions_by_row(row, data_dir, split='test', device='cuda:0')
         test_acc = np.mean(labels == predictions)
         df.at[idx, 'test_accuracy'] = test_acc
         #print("test acc: ", test_acc)
@@ -192,14 +196,17 @@ def main():
         os.makedirs('./results/figures')
 
     # produce figure 1
-    produce_data_example_plot()
+    #produce_data_example_plot()
 
     # produce figure 2
-    experiment_path = os.path.join(args.ray_root_dir, 'time_frequency')
-    produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
+    #experiment_path = os.path.join(args.ray_root_dir, 'time_frequency')
+    #produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
 
     # produce figure 3
-    experiment_path = os.path.join(args.ray_root_dir, 'audio_mnist')
+    #experiment_path = os.path.join(args.ray_root_dir, 'audio_mnist')
+    #produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
+
+    experiment_path = os.path.join(args.ray_root_dir, 'esc50')
     produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
 
     print("")

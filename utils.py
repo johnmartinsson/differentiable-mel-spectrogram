@@ -17,9 +17,13 @@ def get_config_by_row(row):
 def get_dataset_by_config(config, data_dir):
     if config['dataset_name'] == 'audio_mnist':
         dataset = datasets.AudioMNISTDataset(
-            source_dir    = data_dir,
+            source_dir = data_dir,
         )
-
+    elif config['dataset_name'] == 'esc50':
+        dataset = datasets.ESC50Dataset(
+            source_dir = data_dir,
+            resample_rate = config['resample_rate'],
+        )
     else:
         # random offset 1/5 of tf-image in each direction
         if config['center_offset']:
@@ -159,7 +163,19 @@ def get_model_by_config(config):
             energy_normalize = config['energy_normalize'],
             normalize_window = config['normalize_window'],
         )
-
+    elif config['model_name'] == 'panns_cnn6':
+        net = models.MelPANNsNet(
+            n_classes   = n_classes,
+            init_lambd  = torch.tensor(config['init_lambd']),
+            device      = config['device'],
+            n_mels      = config['n_mels'],
+            sample_rate = config['resample_rate'],
+            n_points    = config['n_points'],
+            hop_length  = config['hop_length'],
+            optimized   = config['optimized'],
+            energy_normalize = config['energy_normalize'],
+            normalize_window = config['normalize_window'],
+        )
     else:
         raise ValueError("model name not found: ", config['model_name'])
 

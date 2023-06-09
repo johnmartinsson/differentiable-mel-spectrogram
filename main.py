@@ -74,6 +74,8 @@ def main():
     # hyperparamter search space
     if "audio_mnist" in args.name:
         search_space = search_spaces.audio_mnist(args.max_epochs)
+    elif "esc50" in args.name:
+        search_space = search_spaces.esc50(args.max_epochs)
     elif "time_frequency" in args.name:
         search_space = search_spaces.time_frequency(args.max_epochs)
     else:
@@ -84,23 +86,22 @@ def main():
     reporter = CLIReporter(
         metric_columns=[
             "loss",
+            "valid_loss",
             "lambd_est",
             "training_iteration",
-            "best_lambd_est",
             "best_valid_acc",
         ],
         parameter_columns = [
             'init_lambd',
             'trainable',
             'model_name',
-            'center_offset',
         ],
         max_column_length = 10
     )
 
     run_experiment_fn = partial(run_experiment, data_dir=args.data_dir)
 
-    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 2.0, "gpu": 0.33})
+    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 8.0, "gpu": 1.0})
 
     tuner = tune.Tuner(
         trainable_with_resources,

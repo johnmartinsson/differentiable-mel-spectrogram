@@ -3,7 +3,49 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
 
+#from torchlibrosa.stft import Spectrogram, LogmelFilterBank
+
+import panns
 import time_frequency as tf
+
+class MelSpectrogramLayerDebug(nn.Module):
+    def __init__(self, sample_rate=8000, n_mels=128, window_size=1024, hop_length=320):
+        super(MelSpectrogramLayerDebug, self).__init__()
+        #window = 'hann'
+        #center = True
+        #pad_mode = 'constant' #'reflect'
+        #ref = 1.0
+        #amin = 1e-10
+        #top_db = None
+        #fmin = 0
+        self.lambd      = nn.Parameter(torch.tensor(0.0))
+
+        # Spectrogram extractor
+        self.mel_spectrogram_extractor = torchaudio.transforms.MelSpectrogram(
+            sample_rate = sample_rate,
+            n_fft = window_size,
+            win_length = window_size,
+            hop_length = hop_length,
+            f_min = 50,
+            f_max = 4000,
+            n_mels = n_mels,
+            pad_mode = 'reflect'
+        )
+        #self.spectrogram_extractor = Spectrogram(n_fft=window_size, hop_length=hop_size, 
+        #    win_length=window_size, window=window, center=center, pad_mode=pad_mode, 
+        #    freeze_parameters=True)
+
+        # Logmel feature extractor
+        #self.logmel_extractor = LogmelFilterBank(sr=sample_rate, n_fft=window_size, 
+        #    n_mels=mel_bins, fmin=fmin, fmax=fmax, ref=ref, amin=amin, top_db=top_db, 
+        #    freeze_parameters=True)
+
+    def forward(self, x):
+        x = self.mel_spectrogram_extractor(x)
+        x = torch.unsqueeze(x, 1)
+        #x = self.spectrogram_extractor(x)
+        #x = self.logmel_extractor(x)
+        return x
 
 class SpectrogramLayer(nn.Module):
     def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
@@ -159,6 +201,37 @@ class MelConvNet(nn.Module):
         x = self.fc2(x)
 
         return x, s
+
+class MelPANNsNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
+        super(MelPANNsNet, self).__init__()
+
+        self.energy_normalize = energy_normalize
+
+        # Mel spectrogram extractor
+        self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, normalize_window=normalize_window)
+        #self.spectrogram_layer = MelSpectrogramLayerDebug(n_mels=n_mels)
+
+        self.spectrogram_model = panns.Cnn6(n_classes, n_mels)
+
+    def forward(self, x):
+        """ Input (batch_size, n_points) """
+
+        # shape (batch_size, 1, mel_bins, time_steps)
+        s = self.spectrogram_layer(x)
+
+        if self.energy_normalize:
+            s = torch.log(s + 1)
+
+        # shape (batch_size, 1, time_steps, mel_bins)
+        #print("###################################################################")
+        #print("SHAPE: ", s.shape)
+        x = s.transpose(2, 3)
+
+        x = self.spectrogram_model(x)
+
+        return x, s
+
 
 class NonLinearNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
