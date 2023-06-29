@@ -197,8 +197,8 @@ def get_model_by_config(config):
             n_mels      = config['n_mels'],
             sample_rate = config['resample_rate'],
             n_points    = config['n_points'],
-            hop_length  = config['hop_length'], #int(config['resample_rate'] * config['hop_time_s']),
-            optimized   = config['optimized'], #True,
+            hop_length  = config['hop_length'],
+            optimized   = config['optimized'],
             energy_normalize = config['energy_normalize'],
             normalize_window = config['normalize_window'],
         )

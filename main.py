@@ -27,8 +27,7 @@ def run_experiment(config, data_dir):
     net.spectrogram_layer.requires_grad_(config['trainable'])
 
     # pre-trained
-    # TODO: fix this!
-    if config['pretrained'] is not None:
+    if config['model_name'] == 'panns_cnn6'] and config['pretrained'] is not None:
         if config['pretrained']:
             checkpoint_path = config['checkpoint_path']
             # load weights

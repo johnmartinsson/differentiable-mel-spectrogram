@@ -143,7 +143,6 @@ class Cnn6(nn.Module):
         self.mask_time = mask_time
         self.mask_freq = mask_freq
 
-        # TODO: why batch norm over frequencies?
         self.bn1 = nn.BatchNorm2d(n_mels)
 
         self.conv_block1 = ConvBlock5x5(in_channels=1, out_channels=64)

@@ -8,76 +8,9 @@ import torchaudio
 import panns
 import time_frequency as tf
 
-class MelSpectrogramLayerDebug(nn.Module):
-    def __init__(self, sample_rate=8000, n_mels=128, window_size=1024, hop_length=320):
-        super(MelSpectrogramLayerDebug, self).__init__()
-        #window = 'hann'
-        #center = True
-        #pad_mode = 'constant' #'reflect'
-        #ref = 1.0
-        #amin = 1e-10
-        #top_db = None
-        #fmin = 0
-        self.lambd      = nn.Parameter(torch.tensor(0.0))
-
-        # Spectrogram extractor
-        self.mel_spectrogram_extractor = torchaudio.transforms.MelSpectrogram(
-            sample_rate = sample_rate,
-            n_fft = window_size,
-            win_length = window_size,
-            hop_length = hop_length,
-            f_min = 50,
-            f_max = 4000,
-            n_mels = n_mels,
-            pad_mode = 'reflect'
-        )
-        #self.spectrogram_extractor = Spectrogram(n_fft=window_size, hop_length=hop_size, 
-        #    win_length=window_size, window=window, center=center, pad_mode=pad_mode, 
-        #    freeze_parameters=True)
-
-        # Logmel feature extractor
-        #self.logmel_extractor = LogmelFilterBank(sr=sample_rate, n_fft=window_size, 
-        #    n_mels=mel_bins, fmin=fmin, fmax=fmax, ref=ref, amin=amin, top_db=top_db, 
-        #    freeze_parameters=True)
-
-    def forward(self, x):
-        x = self.mel_spectrogram_extractor(x)
-        x = torch.unsqueeze(x, 1)
-        #x = self.spectrogram_extractor(x)
-        #x = self.logmel_extractor(x)
-        return x
-
-class SpectrogramLayer(nn.Module):
-    def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
-        super(SpectrogramLayer, self).__init__()
-        
-        self.hop_length = hop_length
-        self.lambd      = nn.Parameter(init_lambd)
-        self.device     = device
-        self.size       = size #(512, 1024)
-        self.optimized  = optimized
-        self.normalize_window = normalize_window
-        
-    def forward(self, x):
-    
-        (batch_size, n_points) = x.shape
-        if self.optimized:
-            spectrograms = torch.empty((batch_size, 1, self.size[0], self.size[1]), dtype=torch.float32).to(self.device)
-        else:
-            # redundancy in spectrogram
-            spectrograms = torch.empty((batch_size, 1, n_points + 1, n_points // self.hop_length + 1), dtype=torch.float32).to(self.device)
-        
-        for idx in range(batch_size):
-            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length, norm=self.normalize_window)
-
-            #if self.optimized:
-            #    spectrogram = F.interpolate(torch.unsqueeze(torch.unsqueeze(spectrogram, axis=0), axis=0), size=(self.size[0], self.size[1]))
-            #    spectrogram = spectrogram[0,0]
-
-            spectrograms[idx,:,:,:] = torch.unsqueeze(spectrogram, axis=0)
-        
-        return spectrograms
-
+###############################################################################
+# Differentiable Mel spectrogram
+###############################################################################
 class MelSpectrogramLayer(nn.Module):
     def __init__(self, init_lambd, n_mels, n_points, sample_rate, f_min=0, f_max=None, hop_length=1, device='cpu', optimized=False, normalize_window=False):
         super(MelSpectrogramLayer, self).__init__()
@@ -232,6 +165,40 @@ class MelPANNsNet(nn.Module):
 
         return x, s
 
+###############################################################################
+# Differentiable spectrogram
+###############################################################################
+class SpectrogramLayer(nn.Module):
+    def __init__(self, init_lambd, device='cpu', optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
+        super(SpectrogramLayer, self).__init__()
+        
+        self.hop_length = hop_length
+        self.lambd      = nn.Parameter(init_lambd)
+        self.device     = device
+        self.size       = size #(512, 1024)
+        self.optimized  = optimized
+        self.normalize_window = normalize_window
+        
+    def forward(self, x):
+    
+        (batch_size, n_points) = x.shape
+        if self.optimized:
+            spectrograms = torch.empty((batch_size, 1, self.size[0], self.size[1]), dtype=torch.float32).to(self.device)
+        else:
+            # redundancy in spectrogram
+            spectrograms = torch.empty((batch_size, 1, n_points + 1, n_points // self.hop_length + 1), dtype=torch.float32).to(self.device)
+        
+        for idx in range(batch_size):
+            spectrogram = tf.differentiable_spectrogram(x[idx]-torch.mean(x[idx]), torch.abs(self.lambd), optimized=self.optimized, device=self.device, hop_length=self.hop_length, norm=self.normalize_window)
+
+            #if self.optimized:
+            #    spectrogram = F.interpolate(torch.unsqueeze(torch.unsqueeze(spectrogram, axis=0), axis=0), size=(self.size[0], self.size[1]))
+            #    spectrogram = spectrogram[0,0]
+
+            spectrograms[idx,:,:,:] = torch.unsqueeze(spectrogram, axis=0)
+        
+        return spectrograms
+
 
 class MlpNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
@@ -324,3 +291,26 @@ class ConvNet(nn.Module):
         x = self.fc2(x)
 
         return x, s
+
+class MelSpectrogramLayerDebug(nn.Module):
+    def __init__(self, sample_rate=8000, n_mels=128, window_size=1024, hop_length=320):
+        super(MelSpectrogramLayerDebug, self).__init__()
+
+        # Spectrogram extractor
+        self.mel_spectrogram_extractor = torchaudio.transforms.MelSpectrogram(
+            sample_rate = sample_rate,
+            n_fft = window_size,
+            win_length = window_size,
+            hop_length = hop_length,
+            f_min = 50,
+            f_max = 4000,
+            n_mels = n_mels,
+            pad_mode = 'reflect'
+        )
+
+    def forward(self, x):
+        x = self.mel_spectrogram_extractor(x)
+        x = torch.unsqueeze(x, 1)
+        return x
+
+

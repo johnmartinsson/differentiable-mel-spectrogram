@@ -14,13 +14,9 @@ def predict_test(df, data_dir, experiment_path):
     print("making test predictions (takes a couple of minutes on GPU) ...")
     for row in tqdm.tqdm(df.iterrows()):
         idx = row[0]
-        #print(row)
-        #print("Model = ", row[1]['config/model_name'])
-        #print("reported best valid acc: ", row[1]['best_valid_acc'])
         labels, predictions = utils.get_predictions_by_row(row, data_dir, split='test', device='cuda:0')
         test_acc = np.mean(labels == predictions)
         df.at[idx, 'test_accuracy'] = test_acc
-        #print("test acc: ", test_acc)
         
         predictionss.append(predictions)
         labelss.append(labels)
