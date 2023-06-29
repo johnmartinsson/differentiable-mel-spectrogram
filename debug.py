@@ -62,9 +62,10 @@ print("batch_loss = ", loss.item())
 
 
 # debug logits
-print(logits[0].detach().cpu().numpy())
-print(labels[0].detach().cpu().numpy())
-print(s[0].detach().cpu().numpy())
+print("logits: ", logits[0].detach().cpu().numpy())
+print("softmax: ", torch.nn.functional.softmax(logits).detach().cpu().numpy()[0])
+print("label: ", labels[0].detach().cpu().numpy())
+print("spectrogram: ", s[0].detach().cpu().numpy())
 
 # debug spectrogram
 
