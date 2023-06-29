@@ -137,7 +137,7 @@ class MelLinearNet(nn.Module):
         s = self.spectrogram_layer(x)
         # normalization of s? PCEN?
         if self.energy_normalize:
-            s = torch.log(s + 1)
+            s = torch.log(s + 1e-10)
 
         # dropout on spectrogram
         x = F.dropout(s.view(-1, self.size[0] * self.size[1]), p=0.2)
@@ -161,7 +161,7 @@ class MelMlpNet(nn.Module):
 
         # normalization of s? PCEN?
         if self.energy_normalize:
-            s = torch.log(s + 1)
+            s = torch.log(s + 1e-10)
 
         x = self.fc1(s.view(-1, self.size[0] * self.size[1]))
         x = F.relu(x)
@@ -190,7 +190,7 @@ class MelConvNet(nn.Module):
 
         # normalization of s? PCEN?
         if self.energy_normalize:
-            s = torch.log(s + 1)
+            s = torch.log(s + 1e-10)
 
         x = self.conv1(s)
         x = F.relu(x)
@@ -203,7 +203,7 @@ class MelConvNet(nn.Module):
         return x, s
 
 class MelPANNsNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False):
+    def __init__(self, n_classes, init_lambd, device, n_mels, sample_rate, n_points, hop_length=1, optimized=False, energy_normalize=False, normalize_window=False, augment=False):
         super(MelPANNsNet, self).__init__()
 
         self.energy_normalize = energy_normalize
@@ -212,7 +212,7 @@ class MelPANNsNet(nn.Module):
         self.spectrogram_layer = MelSpectrogramLayer(init_lambd, n_mels=n_mels, n_points=n_points, sample_rate=sample_rate, hop_length=hop_length, device=device, optimized=optimized, normalize_window=normalize_window)
         #self.spectrogram_layer = MelSpectrogramLayerDebug(n_mels=n_mels)
 
-        self.spectrogram_model = panns.Cnn6(n_classes, n_mels)
+        self.spectrogram_model = panns.Cnn6(n_classes, n_mels, augment=augment)
 
     def forward(self, x):
         """ Input (batch_size, n_points) """
@@ -221,7 +221,7 @@ class MelPANNsNet(nn.Module):
         s = self.spectrogram_layer(x)
 
         if self.energy_normalize:
-            s = torch.log(s + 1)
+            s = torch.log(s + 1e-10)
 
         # shape (batch_size, 1, time_steps, mel_bins)
         #print("###################################################################")
@@ -232,28 +232,6 @@ class MelPANNsNet(nn.Module):
 
         return x, s
 
-
-class NonLinearNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
-        super(NonLinearNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
-        self.device = device
-        self.size = size
-        
-        self.hidden_state = 32
-        self.fc1 = nn.Linear(size[0] * size[1], self.hidden_state)
-        self.fc2 = nn.Linear(self.hidden_state, n_classes)
-        #self.bn  = nn.BatchNorm2d(1)
-
-    def forward(self, x):
-        # compute spectrograms
-        s = self.spectrogram_layer(x)
-        #s = self.bn(s)
-        x = s.view(-1, self.size[0] * self.size[1])
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        return x, s
 
 class MlpNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
@@ -274,36 +252,6 @@ class MlpNet(nn.Module):
         x = self.fc2(x)
         return x, s
 
-class ShallowConvNet(nn.Module):
-    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
-        super(ShallowConvNet, self).__init__()
-        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
-        
-        self.device = device
-        self.size = size
-
-        self.hidden_state = 32
-        
-        self.conv1 = nn.Conv2d(1, self.hidden_state, 5, padding='same')
-        self.fc1 = nn.Linear(self.hidden_state * (size[0] // 2) * (size[1] // 2), n_classes)
-
-        self.pool = nn.MaxPool2d(2, 2)
-        self.dropout = nn.Dropout(p=0.2)
-        
-    def forward(self, x):
-        # compute spectrograms
-        s = self.spectrogram_layer(x)
-
-        x = self.conv1(s)
-        x = F.relu(x)
-        x = x + s
-        #x = self.pool(x)
-
-        x = x.view(-1, self.hidden_state * (self.size[0] // 2) * (self.size[1] // 2))
-        x = self.fc1(x)
-
-        return x, s
-
 class LinearNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
         super(LinearNet, self).__init__()
@@ -321,6 +269,30 @@ class LinearNet(nn.Module):
         x = s.view(-1, self.size[0] * self.size[1])
         x = self.fc(x)
         return x, s
+
+class BatchNormLinearNet(nn.Module):
+    def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):
+        super(BatchNormLinearNet, self).__init__()
+        self.spectrogram_layer = SpectrogramLayer(init_lambd, device=device, optimized=optimized, size=size, hop_length=hop_length, normalize_window=normalize_window)
+        
+        self.device = device
+        self.size = size
+        
+        self.fc = nn.Linear(size[0] * size[1], n_classes)
+        self.bn = torch.nn.BatchNorm2d(size[0])
+
+    def forward(self, x):
+        # compute spectrograms
+        s = self.spectrogram_layer(x)
+
+        s = s.transpose(1, 2)
+        s = self.bn(s)
+        s = s.transpose(1, 2)
+
+        x = s.view(-1, self.size[0] * self.size[1])
+        x = self.fc(x)
+        return x, s
+
 
 class ConvNet(nn.Module):
     def __init__(self, n_classes, init_lambd, device, optimized=False, size=(512, 1024), hop_length=1, normalize_window=False):

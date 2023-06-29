@@ -26,6 +26,14 @@ def run_experiment(config, data_dir):
 
     net.spectrogram_layer.requires_grad_(config['trainable'])
 
+    # pre-trained
+    # TODO: fix this!
+    if config['pretrained'] is not None:
+        if config['pretrained']:
+            checkpoint_path = config['checkpoint_path']
+            # load weights
+            utils.load_checkpoint(net, checkpoint_path=checkpoint_path, device=config['device'])
+
     parameters = []
     for idx, (name, param) in enumerate(net.named_parameters()):
 
@@ -47,7 +55,13 @@ def run_experiment(config, data_dir):
     else:
         raise ValueError("optimizer not found: ", config['optimizer_name'])
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    # PANNs models are trained with binary cross entropy
+    if 'panns' in config['model_name']:
+        one_hot = True
+        loss_fn = torch.nn.functional.binary_cross_entropy
+    else:
+        one_hot = False
+        loss_fn = torch.nn.CrossEntropyLoss()
 
     net, history = train.train_model(
         net=net,
@@ -59,6 +73,7 @@ def run_experiment(config, data_dir):
         max_epochs=config['max_epochs'],
         verbose=0,
         device=config['device'],
+        one_hot=one_hot
     )
 
 def main():
@@ -87,13 +102,14 @@ def main():
         metric_columns=[
             "loss",
             "valid_loss",
+            "valid_acc",
             "lambd_est",
             "training_iteration",
-            "best_valid_acc",
         ],
         parameter_columns = [
             'init_lambd',
             'trainable',
+            #'normalize_window',
             'model_name',
         ],
         max_column_length = 10

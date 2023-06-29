@@ -1,3 +1,4 @@
+import collections
 import torch
 import numpy as np
 import os
@@ -5,6 +6,33 @@ import tqdm
 
 import models
 import datasets
+
+def create_folder(fd):
+    if not os.path.exists(fd):
+        os.makedirs(fd)
+
+def load_checkpoint(model, checkpoint_path=None, device=torch.device('cpu')):
+    if not checkpoint_path:
+        checkpoint_path='./weights/Cnn6_mAP=0.343.pth'
+    print('Checkpoint path: {}'.format(checkpoint_path))
+
+    if not os.path.exists(checkpoint_path): # or os.path.getsize(checkpoint_path) < 3e8:
+        print("checkpoint path does not exist: ", checkpoint_path)
+        create_folder(os.path.dirname(checkpoint_path))
+        zenodo_path = 'https://zenodo.org/record/3987831/files/Cnn6_mAP%3D0.343.pth'
+        os.system('wget -O "{}" "{}"'.format(checkpoint_path, zenodo_path))
+
+    print("loading weights: ", checkpoint_path)
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    state_dict = checkpoint['model']
+
+    new_state_dict = collections.OrderedDict()
+
+    for key, value in state_dict.items():
+        new_key = "spectrogram_model." + key
+        new_state_dict[new_key] = value
+
+    model.load_state_dict(new_state_dict, strict=False)
 
 def get_config_by_row(row):
     config = {}
@@ -94,6 +122,17 @@ def get_model_by_config(config):
             optimized  = config['optimized'],
             normalize_window = config['normalize_window'],
         )
+    elif config['model_name'] == 'bn_linear_net':
+        net = models.BatchNormLinearNet(
+            n_classes  = n_classes,
+            init_lambd = torch.tensor(config['init_lambd']),
+            device     = config['device'],
+            size       = (config['n_points']+1, config['n_points']+1),
+            hop_length = config['hop_length'],
+            optimized  = config['optimized'],
+            normalize_window = config['normalize_window'],
+        )
+
     elif config['model_name'] == 'non_linear_net':
         net = models.NonLinearNet(
             n_classes  = n_classes,
@@ -173,6 +212,7 @@ def get_model_by_config(config):
             n_points    = config['n_points'],
             hop_length  = config['hop_length'],
             optimized   = config['optimized'],
+            augment     = config['augment'],
             energy_normalize = config['energy_normalize'],
             normalize_window = config['normalize_window'],
         )

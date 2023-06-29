@@ -2,9 +2,10 @@ import os
 from ray import tune
 
 import torch
+import time
 import numpy as np
 
-def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max_epochs, verbose=1, device='cuda:0'):
+def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max_epochs, verbose=1, device='cuda:0', one_hot=False):
     history = {
         "best_valid_acc" : 0,
         "best_valid_loss" : np.inf,
@@ -22,12 +23,26 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
         running_energy = 0.0
         count = 0
         for i, data in enumerate(trainloader):
+            t_tot1 = time.time()
             inputs, labels = data
+
+            if one_hot:
+                # TODO: this won't work in general
+                labels = torch.nn.functional.one_hot(labels, 50).float()
+
+            t1 = time.time()
             inputs, labels = inputs.to(device), labels.to(device)
+            t2 = time.time()
+            #print("time 1 = {}, batch = {}".format(t2-t1, i))
+
 
             optimizer.zero_grad()
 
+            t1 = time.time()
             logits, s = net(inputs)
+            t2 = time.time()
+            #print("time 2 = {}, batch = {}".format(t2-t1, i))
+
             loss = loss_fn(logits, labels)# + aux_loss
             loss.backward()
 
@@ -42,6 +57,9 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
             running_loss += loss.item()
             running_energy += np.sum(s.cpu().detach().numpy())
             count += 1
+
+            t_tot2 = time.time()
+            #print("time total = {}, batch = {}".format(t_tot2-t_tot1, i))
             
         train_loss = running_loss / count
         train_energy = running_energy / count
@@ -57,12 +75,20 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
         net.eval()
         for data in validloader:
             inputs, labels = data
+
+            if one_hot:
+                # TODO: this won't work in general
+                labels = torch.nn.functional.one_hot(labels, 50).float()
+
             inputs, labels = inputs.to(device), labels.to(device)
 
             outputs, spectrograms = net(inputs)
             loss = loss_fn(outputs, labels)
 
             predictions = torch.argmax(outputs, axis=1)
+
+            if one_hot:
+                labels = torch.argmax(labels, axis=1)
 
             accuracy = torch.mean((predictions == labels).float())
             running_acc += accuracy.item()
@@ -97,7 +123,7 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
             patience_count += 1
 
         # report results
-        tune.report(loss=train_loss, lambd_est=net.spectrogram_layer.lambd.item(), valid_loss=valid_loss, best_valid_acc=best_valid_acc, best_valid_loss=best_valid_loss, energy=train_energy, best_lambd_est=best_lambd_est)
+        tune.report(loss=train_loss, lambd_est=net.spectrogram_layer.lambd.item(), valid_loss=valid_loss, valid_acc=valid_acc, best_valid_acc=best_valid_acc, best_valid_loss=best_valid_loss, energy=train_energy, best_lambd_est=best_lambd_est)
 
         if verbose >= 1:
             print("epoch {}, valid loss = {}".format(epoch, valid_loss))
