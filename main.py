@@ -27,7 +27,7 @@ def run_experiment(config, data_dir):
     net.spectrogram_layer.requires_grad_(config['trainable'])
 
     # pre-trained
-    if config['model_name'] == 'panns_cnn6'] and config['pretrained'] is not None:
+    if config['model_name'] == 'panns_cnn6' and config['pretrained'] is not None:
         if config['pretrained']:
             checkpoint_path = config['checkpoint_path']
             # load weights
@@ -62,17 +62,24 @@ def run_experiment(config, data_dir):
         one_hot = False
         loss_fn = torch.nn.CrossEntropyLoss()
 
+    # TODO: this is not doing anything since gamma = 1.0
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 
+		       step_size = 20, # Period of learning rate decay
+		       gamma = 1.0) # Multiplicative factor of learning rate decay
+
     net, history = train.train_model(
         net=net,
         optimizer=optimizer,
         loss_fn=loss_fn,
         trainloader=trainloader,
         validloader=validloader,
+        scheduler=scheduler,
         patience=config['patience'],
         max_epochs=config['max_epochs'],
         verbose=0,
         device=config['device'],
-        one_hot=one_hot
+        one_hot=one_hot,
+        n_classes=10 if 'audio_mnist' in config['dataset_name'] else 50,
     )
 
 def main():
@@ -102,12 +109,16 @@ def main():
             "loss",
             "valid_loss",
             "valid_acc",
+            "best_valid_acc",
             "lambd_est",
             "training_iteration",
         ],
         parameter_columns = [
             'init_lambd',
             'trainable',
+            #'augment',
+            #'lr_tf',
+            #'pretrained',
             #'normalize_window',
             'model_name',
         ],
@@ -116,7 +127,7 @@ def main():
 
     run_experiment_fn = partial(run_experiment, data_dir=args.data_dir)
 
-    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 8.0, "gpu": 1.0})
+    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 2.0, "gpu": 0.25})
 
     tuner = tune.Tuner(
         trainable_with_resources,

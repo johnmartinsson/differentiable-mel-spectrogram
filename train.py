@@ -5,7 +5,7 @@ import torch
 import time
 import numpy as np
 
-def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max_epochs, verbose=1, device='cuda:0', one_hot=False):
+def train_model(net, optimizer, loss_fn, trainloader, validloader, scheduler, patience, max_epochs, verbose=1, device='cuda:0', one_hot=False, n_classes=50):
     history = {
         "best_valid_acc" : 0,
         "best_valid_loss" : np.inf,
@@ -28,7 +28,7 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
             if one_hot:
                 # TODO: this won't work in general
-                labels = torch.nn.functional.one_hot(labels, 50).float()
+                labels = torch.nn.functional.one_hot(labels, n_classes).float()
 
             t1 = time.time()
             inputs, labels = inputs.to(device), labels.to(device)
@@ -60,6 +60,9 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
             t_tot2 = time.time()
             #print("time total = {}, batch = {}".format(t_tot2-t_tot1, i))
+
+        # step scheduler
+        scheduler.step()
             
         train_loss = running_loss / count
         train_energy = running_energy / count
@@ -78,7 +81,7 @@ def train_model(net, optimizer, loss_fn, trainloader, validloader, patience, max
 
             if one_hot:
                 # TODO: this won't work in general
-                labels = torch.nn.functional.one_hot(labels, 50).float()
+                labels = torch.nn.functional.one_hot(labels, n_classes).float()
 
             inputs, labels = inputs.to(device), labels.to(device)
 

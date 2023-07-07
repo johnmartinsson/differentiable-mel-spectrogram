@@ -15,6 +15,90 @@ import utils
 import datasets
 import time_frequency as tf
 
+def get_window_length_results(df, window_length, sr=8000):
+    init_lambd = window_length / 6 * sr
+    eps = 1e-5
+    df_res = df[(df['config/init_lambd'] > (init_lambd - eps)) & (df['config/init_lambd'] < (init_lambd + eps))]
+
+    return df_res
+
+def produce_table_1(experiment_path, dataset_name):
+    df = pd.read_csv(os.path.join(experiment_path, "{}.csv".format(dataset_name)))
+    df_train = df[df['config/trainable'] == True]
+    df_fixed = df[df['config/trainable'] == False]
+
+    window_lengths = [0.035, 0.010, 0.300]
+
+    print("Model & $l_{\lambda_{init}}$ & $l_{\lambda}_{est}$ & Method & Accuracy \\\\")
+    print("\\hline \\hline")
+
+
+    for window_length in window_lengths:
+        df_train_win = get_window_length_results(df_train, window_length, sr=8000)
+        df_fixed_win = get_window_length_results(df_fixed, window_length, sr=8000)
+
+        mean_train_acc = df_train_win['test_accuracy'].mean() * 100
+        std_train_acc = df_train_win['test_accuracy'].std() * 100
+
+        mean_fixed_acc = df_fixed_win['test_accuracy'].mean() * 100
+        std_fixed_acc = df_fixed_win['test_accuracy'].std() * 100
+
+        min_lambd_est = df_train_win['lambd_est'].abs().min() * 6 / 8000
+        max_lambd_est = df_train_win['lambd_est'].abs().max() * 6 / 8000
+
+        row_format = "{} & {} ms & ({}, {}) ms & {} & ${:.1f} \pm {:.1f}$ \\\\"
+        print(row_format.format(
+            "PANNs", int(window_length * 1000), int(min_lambd_est * 1000), int(max_lambd_est * 1000), 
+            "ours", mean_train_acc, std_train_acc)
+        )
+        row_format = "{} & {} ms & {} ms & {} & ${:.1f} \pm {:.1f}$ \\\\"
+        print(row_format.format(
+            "PANNs", int(window_length * 1000), int(window_length * 1000), 
+            "baseline", mean_fixed_acc, std_fixed_acc)
+        )
+        print("\\hline")
+
+def produce_table_2(experiment_path, dataset_name):
+    df = pd.read_csv(os.path.join(experiment_path, "{}.csv".format(dataset_name)))
+    print(df)
+    df_train = df[df['config/trainable'] == True]
+    df_fixed = df[df['config/trainable'] == False]
+
+    sigma_ref = 6.38
+    #lambd_inits = [sigma_ref * 0.2, sigma_ref*0.6, sigma_ref, sigma_ref*1.8, sigma_ref*2.6]
+    lambd_inits = [sigma_ref * 0.2, sigma_ref, sigma_ref*2.6]
+
+    print("Model & $l_{\lambda_{init}}$ & $l_{\lambda}_{est}$ & Method & Accuracy \\\\")
+    print("\\hline \\hline")
+
+
+    for lambd_init in lambd_inits:
+        df_train_win = df_train[df_train['config/init_lambd'] == lambd_init]
+        df_fixed_win = df_fixed[df_fixed['config/init_lambd'] == lambd_init]
+
+        mean_train_acc = df_train_win['test_accuracy'].mean() * 100
+        std_train_acc = df_train_win['test_accuracy'].std() * 100
+
+        mean_fixed_acc = df_fixed_win['test_accuracy'].mean() * 100
+        std_fixed_acc = df_fixed_win['test_accuracy'].std() * 100
+
+        min_lambd_est = df_train_win['lambd_est'].abs().min()
+        max_lambd_est = df_train_win['lambd_est'].abs().max()
+
+        row_format = "{} & {:.1f} & ({:.1f}, {:.1f}) & {} & ${:.1f} \pm {:.1f}$ \\\\"
+        print(row_format.format(
+            "LinearNet", lambd_init, min_lambd_est, max_lambd_est, 
+            "ours", mean_train_acc, std_train_acc)
+        )
+        row_format = "{} & {:.1f} & {:.1f} & {} & ${:.1f} \pm {:.1f}$ \\\\"
+        print(row_format.format(
+            "LinearNet", lambd_init, lambd_init, 
+            "baseline", mean_fixed_acc, std_fixed_acc)
+        )
+        print("\\hline")
+
+
+
 def produce_result_table(experiment_path, dataset_name):
     if dataset_name == 'audio_mnist':
         model_names = ['mel_conv_net', 'mel_linear_net']
@@ -59,12 +143,15 @@ def produce_result_table(experiment_path, dataset_name):
 
 def main():
     parser = argparse.ArgumentParser(description='Produce plots.')
-    parser.add_argument('--experiment_path', help='The name of the experiment directory.', required=True, type=str)
-    parser.add_argument('--dataset_name', help='The dataset name.', required=True, type=str)
+    #parser.add_argument('--experiment_path', help='The name of the experiment directory.', required=True, type=str)
+    #parser.add_argument('--dataset_name', help='The dataset name.', required=True, type=str)
     args = parser.parse_args()
 
-    experiment_path = os.path.join(args.experiment_path)
-    produce_result_table(experiment_path, args.dataset_name)
+    #experiment_path = os.path.join(args.experiment_path)
+    #produce_table_1('./test/esc50_final', 'esc50')
+    #produce_table_1('./test/audio_mnist_new', 'audio_mnist')
+    #produce_table_2('/mnt/storage_1/john/ray_results/time_frequency', 'time_frequency')
+    produce_table_2('/home/john/gits/differentiable-time-frequency-transforms/test/time_frequency', 'time_frequency')
 
 def get_model_title(model_name):
     if model_name == 'conv_net':
