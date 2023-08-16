@@ -43,13 +43,13 @@ def produce_table_1(experiment_path, dataset_name):
         mean_fixed_acc = df_fixed_win['test_accuracy'].mean() * 100
         std_fixed_acc = df_fixed_win['test_accuracy'].std() * 100
 
-        min_lambd_est = df_train_win['lambd_est'].abs().min() * 6 / 8000
-        max_lambd_est = df_train_win['lambd_est'].abs().max() * 6 / 8000
+        min_lambd_est = df_train_win['best_lambd_est'].abs().min() * 6 / 8000
+        max_lambd_est = df_train_win['best_lambd_est'].abs().max() * 6 / 8000
 
         row_format = "{} & {} ms & ({}, {}) ms & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
             "PANNs", int(window_length * 1000), int(min_lambd_est * 1000), int(max_lambd_est * 1000), 
-            "ours", mean_train_acc, std_train_acc)
+            "DMEL", mean_train_acc, std_train_acc)
         )
         row_format = "{} & {} ms & {} ms & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
@@ -66,9 +66,9 @@ def produce_table_2(experiment_path, dataset_name):
 
     sigma_ref = 6.38
     #lambd_inits = [sigma_ref * 0.2, sigma_ref*0.6, sigma_ref, sigma_ref*1.8, sigma_ref*2.6]
-    lambd_inits = [sigma_ref * 0.2, sigma_ref, sigma_ref*2.6]
+    lambd_inits = [sigma_ref, sigma_ref * 0.2, sigma_ref*2.6]
 
-    print("Model & $l_{\lambda_{init}}$ & $l_{\lambda}_{est}$ & Method & Accuracy \\\\")
+    print("Model & $\lambda_{init}$ & $\lambda_{est}$ & Method & Accuracy \\\\")
     print("\\hline \\hline")
 
 
@@ -82,13 +82,13 @@ def produce_table_2(experiment_path, dataset_name):
         mean_fixed_acc = df_fixed_win['test_accuracy'].mean() * 100
         std_fixed_acc = df_fixed_win['test_accuracy'].std() * 100
 
-        min_lambd_est = df_train_win['lambd_est'].abs().min()
-        max_lambd_est = df_train_win['lambd_est'].abs().max()
+        min_lambd_est = df_train_win['best_lambd_est'].abs().min()
+        max_lambd_est = df_train_win['best_lambd_est'].abs().max()
 
         row_format = "{} & {:.1f} & ({:.1f}, {:.1f}) & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
             "LinearNet", lambd_init, min_lambd_est, max_lambd_est, 
-            "ours", mean_train_acc, std_train_acc)
+            "DSPEC", mean_train_acc, std_train_acc)
         )
         row_format = "{} & {:.1f} & {:.1f} & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
@@ -96,8 +96,6 @@ def produce_table_2(experiment_path, dataset_name):
             "baseline", mean_fixed_acc, std_fixed_acc)
         )
         print("\\hline")
-
-
 
 def produce_result_table(experiment_path, dataset_name):
     if dataset_name == 'audio_mnist':
@@ -150,8 +148,8 @@ def main():
     #experiment_path = os.path.join(args.experiment_path)
     #produce_table_1('./test/esc50_final', 'esc50')
     #produce_table_1('./test/audio_mnist_new', 'audio_mnist')
-    #produce_table_2('/mnt/storage_1/john/ray_results/time_frequency', 'time_frequency')
-    produce_table_2('/home/john/gits/differentiable-time-frequency-transforms/test/time_frequency', 'time_frequency')
+    produce_table_2('/mnt/storage_1/john/ray_results/time_frequency', 'time_frequency')
+    #produce_table_2('/home/john/gits/differentiable-time-frequency-transforms/test/time_frequency', 'time_frequency')
 
 def get_model_title(model_name):
     if model_name == 'conv_net':
