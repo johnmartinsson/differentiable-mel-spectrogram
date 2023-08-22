@@ -116,6 +116,7 @@ def main():
         parameter_columns = [
             'init_lambd',
             'trainable',
+            'speaker_id',
             #'augment',
             #'lr_tf',
             #'pretrained',
@@ -127,7 +128,7 @@ def main():
 
     run_experiment_fn = partial(run_experiment, data_dir=args.data_dir)
 
-    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 2.0, "gpu": 0.25})
+    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 8.0, "gpu": 1.00})
 
     tuner = tune.Tuner(
         trainable_with_resources,

@@ -45,7 +45,8 @@ def get_config_by_row(row):
 
 def get_dataset_by_config(config, data_dir):
     if config['dataset_name'] == 'audio_mnist':
-        trainset_speaker_id = [28, 56,  7, 19, 35,  1,  6, 16, 23, 34, 46, 53, 36, 57,  9, 24, 37,  2, 8, 17, 29, 39, 48, 54, 43, 58, 14, 25, 38,  3, 10, 20, 30, 40, 49, 55]
+        #trainset_speaker_id = config['speaker_id'] #28, 56, 7, 19, 35,  1,  6, 16, 23, 34, 46, 53, 36, 57,  9, 24, 37,  2, 8, 17, 29, 39, 48, 54, 43, 58, 14, 25, 38,  3, 10, 20, 30, 40, 49, 55]
+        trainset_speaker_id = [28, 56, 7, 19, 35,  1,  6, 16, 23, 34, 46, 53, 36, 57,  9, 24, 37,  2, 8, 17, 29, 39, 48, 54, 43, 58, 14, 25, 38,  3, 10, 20, 30, 40, 49, 55]
         validset_speaker_id = [12, 47, 59, 15, 27, 41,  4, 11, 21, 31, 44, 50]
         testset_speaker_id = [26, 52, 60, 18, 32, 42,  5, 13, 22, 33, 45, 51]
 
@@ -82,6 +83,7 @@ def get_dataset_by_config(config, data_dir):
         )
 
         assert((len(trainset) + len(validset) + len(testset)) == 30000)
+        #print("Trainset: {}".format(len(trainset)))
 
         return trainset, validset, testset
     elif config['dataset_name'] == 'esc50':
