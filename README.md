@@ -1,19 +1,19 @@
 # Analysis of the differentiable (Mel) spectrogram as a trainable layer in neural networks
 
-The code in the 'main' branch is subject to change in the future, the exact code used in the paper is kept in a separate branch called 'eusipco2023'.
+The code in the 'main' branch is subject to change in the future, the exact code used in the paper is kept in a separate branch called 'icassp2024'.
 
 This README.md explains how to reproduce the main results in the paper
 
-    Under review at EUSIPCO 2023.
+    Under review at ICASSP 2024.
     
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
         
 # Reproduce the results in the paper
 
 ## Clone the repository
-Clone the 'eusipco2023' branch of the repository and change working directory. All commands assume that this is the working directory.
+Clone the 'icassp2024' branch of the repository and change working directory. All commands assume that this is the working directory.
 
-    git clone -b eusipco2023 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
+    git clone -b icassp2024 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
     cd differentiable-mel-spectrogram
     
 ## Install the environment
