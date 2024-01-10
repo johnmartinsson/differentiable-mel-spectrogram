@@ -4,7 +4,7 @@ The code in the 'main' branch is subject to change in the future, the exact code
 
 This README.md explains how to reproduce the main results in the paper
 
-    Under review at ICASSP 2024.
+    Accepted for publication and presentation at ICASSP 2024.
     
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
         
