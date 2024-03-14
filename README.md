@@ -1,6 +1,6 @@
 # DMEL: The differentiable log-Mel spectrogram as a trainable layer in neural networks
 
-![Figure 2](figures/data_example.png)
+![Data example](figures/data_example.png)
 
 The official implementation of DMEL the method presented in the paper "DMEL: The differentiable log-Mel spectrogram as a trainable layer in neural networks".
 
