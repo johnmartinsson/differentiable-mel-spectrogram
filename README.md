@@ -1,29 +1,23 @@
 # DMEL: The differentiable log-Mel spectrogram as a trainable layer in neural networks
 
-The code in the 'main' branch is subject to change in the future, the exact code used in the paper is kept in a separate branch called 'icassp2024'.
+The official implementation of DMEL the method presented in the paper "DMEL: The differentiable log-Mel spectrogram as a trainable layer in neural networks".
 
-This README.md explains how to reproduce the main results in the paper
-
-    Accepted for publication and presentation at ICASSP 2024.
+Cite as:
     
     TODO: WRITE ABOUT AND REFERENCE THE PAPER
         
 # Reproduce the results in the paper
-
-## Clone the repository
-Clone the 'icassp2024' branch of the repository and change working directory. All commands assume that this is the working directory.
-
-    git clone -b icassp2024 https://github.com/johnmartinsson/differentiable-mel-spectrogram.git
-    cd differentiable-mel-spectrogram
     
 ## Install the environment
+Requires python < 3.11
+
 Using only pip:
 
     pip install -r requirements.txt
     
 Using conda and pip (tested):
     
-    conda create -n reproduce
+    conda create -n reproduce python==3.10
     conda activate reproduce
     conda install pip
     
