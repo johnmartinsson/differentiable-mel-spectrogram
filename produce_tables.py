@@ -4,7 +4,7 @@ import argparse
 import torch
 import tqdm
     
-from ray import tune, air
+#from ray import tune, air
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,7 +27,7 @@ def produce_table_1(experiment_path, dataset_name):
     df_train = df[df['config/trainable'] == True]
     df_fixed = df[df['config/trainable'] == False]
 
-    window_lengths = [0.010] #[0.035, 0.010, 0.300]
+    window_lengths = [0.010, 0.035, 0.300]
 
     print("Model & $l_{\lambda_{init}}$ & $l_{\lambda_{est}}$ & Method & Accuracy \\\\")
     print("\\hline \\hline")
@@ -48,25 +48,25 @@ def produce_table_1(experiment_path, dataset_name):
 
         row_format = "{} & {} ms & ({}, {}) ms & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
-            "PANNs", int(window_length * 1000), int(min_lambd_est * 1000), int(max_lambd_est * 1000), 
+            "LNet", int(window_length * 1000), int(min_lambd_est * 1000), int(max_lambd_est * 1000), 
             "DMEL", mean_train_acc, std_train_acc)
         )
         row_format = "{} & {} ms & {} ms & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
-            "PANNs", int(window_length * 1000), int(window_length * 1000), 
+            "LNet", int(window_length * 1000), int(window_length * 1000), 
             "baseline", mean_fixed_acc, std_fixed_acc)
         )
         print("\\hline")
 
 def produce_table_2(experiment_path, dataset_name):
     df = pd.read_csv(os.path.join(experiment_path, "{}.csv".format(dataset_name)))
-    print(df)
+    #print(df)
     df_train = df[df['config/trainable'] == True]
     df_fixed = df[df['config/trainable'] == False]
 
     sigma_ref = 6.38
     #lambd_inits = [sigma_ref * 0.2, sigma_ref*0.6, sigma_ref, sigma_ref*1.8, sigma_ref*2.6]
-    lambd_inits = [sigma_ref, sigma_ref * 0.2, sigma_ref*5.0]
+    lambd_inits = [sigma_ref * 0.2, sigma_ref, sigma_ref*5.0]
 
     print("Model & $\lambda_{init}$ & $\lambda_{est}$ & Method & Accuracy \\\\")
     print("\\hline \\hline")
@@ -88,9 +88,9 @@ def produce_table_2(experiment_path, dataset_name):
         mean_lambd_est = df_train_win['best_lambd_est'].abs().mean()
         std_lambd_est = df_train_win['best_lambd_est'].abs().std()
 
-        row_format = "{} & {:.1f} & ${:.1f} \pm {:.1f}$ & {} & ${:.1f} \pm {:.1f}$ \\\\"
+        row_format = "{} & {:.1f} & ({:.1f}, {:.1f}) & {} & ${:.1f} \pm {:.1f}$ \\\\"
         print(row_format.format(
-            "LinearNet", lambd_init, mean_lambd_est, std_lambd_est, 
+            "LinearNet", lambd_init, min_lambd_est, max_lambd_est, 
             "DSPEC", mean_train_acc, std_train_acc)
         )
         row_format = "{} & {:.1f} & {:.1f} & {} & ${:.1f} \pm {:.1f}$ \\\\"
@@ -149,10 +149,19 @@ def main():
     args = parser.parse_args()
 
     #experiment_path = os.path.join(args.experiment_path)
-    #produce_table_1('./test/esc50_final', 'esc50')
-    produce_table_1('/home/john/gits/differentiable-time-frequency-transforms/ray_results/audio_mnist_one_speaker', 'audio_mnist')
+    print("ESC50")
+    produce_table_1('./test/esc50_final', 'esc50')
+    print("")
+    
+    print("A-MNIST")
+    produce_table_1('/home/john/gits/differentiable-time-frequency-transforms/ray_results/audio_mnist_10ms', 'audio_mnist')
+    print("")
+
+    print("time-frequency")
     #produce_table_2('/mnt/storage_1/john/ray_results/time_frequency', 'time_frequency')
-    #produce_table_2('/home/john/gits/differentiable-time-frequency-transforms/ray_results/time_frequency', 'time_frequency')
+    produce_table_2('/home/john/gits/differentiable-time-frequency-transforms/ray_results/time_frequency', 'time_frequency')
+    print("")
+
 
 def get_model_title(model_name):
     if model_name == 'conv_net':

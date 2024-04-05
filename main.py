@@ -128,7 +128,7 @@ def main():
 
     run_experiment_fn = partial(run_experiment, data_dir=args.data_dir)
 
-    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 8.0, "gpu": 1.00})
+    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 4.0, "gpu": 0.25})
 
     tuner = tune.Tuner(
         trainable_with_resources,

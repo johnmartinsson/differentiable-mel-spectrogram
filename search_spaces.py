@@ -6,7 +6,7 @@ def esc50(max_epochs):
         # model
         'model_name' : 'panns_cnn6',
         'n_mels' : 64,
-        'hop_length' :int(resample_rate * 0.005),
+        'hop_length' :int(resample_rate * 0.010),
         'energy_normalize' : True,
         'optimized' : True,
         'normalize_window' : False, 
@@ -21,7 +21,7 @@ def esc50(max_epochs):
         'batch_size' : 32,
         'trainable' : tune.grid_search([True, False]),
         'max_epochs' : max_epochs,
-        'patience' : 20,
+        'patience' : 100,
         'device' : 'cuda:0',
         
         # dataset
@@ -39,7 +39,7 @@ def audio_mnist(max_epochs):
         # model
         'model_name' : 'mel_linear_net', #'panns_cnn6', #tune.grid_search(['mel_conv_net', 'mel_linear_net']),
         'n_mels' : 64,
-        'hop_length' :int(resample_rate * 0.005),
+        'hop_length' :int(resample_rate * 0.010),
         'energy_normalize' : True,
         'optimized' : True,
         'normalize_window' : False,

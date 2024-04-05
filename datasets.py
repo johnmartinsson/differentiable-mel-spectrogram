@@ -62,8 +62,8 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
             f_center = f_center_offset + 0.25
 
             if demo:
-                f_offset = 0.4 * f_max
-                t_offset = 0.4 * t_max
+                f_offset = 0.5 * f_max
+                t_offset = 0.5 * t_max
             else:
                 f_offset = torch_random_uniform([f_min, f_max])
                 t_offset = torch_random_uniform([t_min, t_max])
