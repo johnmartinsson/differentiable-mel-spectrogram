@@ -22,10 +22,6 @@ Cite as:
     
 ## Install the environment
 Requires python < 3.11
-
-Using only pip:
-
-    pip install -r requirements.txt
     
 Using conda and pip (tested):
     
