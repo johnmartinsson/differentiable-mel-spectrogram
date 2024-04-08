@@ -26,6 +26,13 @@ def run_experiment(config, data_dir):
 
     net.spectrogram_layer.requires_grad_(config['trainable'])
 
+    # pre-trained
+    if config['model_name'] == 'panns_cnn6' and config['pretrained'] is not None:
+        if config['pretrained']:
+            checkpoint_path = config['checkpoint_path']
+            # load weights
+            utils.load_checkpoint(net, checkpoint_path=checkpoint_path, device=config['device'])
+
     parameters = []
     for idx, (name, param) in enumerate(net.named_parameters()):
 
@@ -47,7 +54,18 @@ def run_experiment(config, data_dir):
     else:
         raise ValueError("optimizer not found: ", config['optimizer_name'])
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    # PANNs models are trained with binary cross entropy
+    if 'panns' in config['model_name']:
+        one_hot = True
+        loss_fn = torch.nn.functional.binary_cross_entropy
+    else:
+        one_hot = False
+        loss_fn = torch.nn.CrossEntropyLoss()
+
+    # TODO: this is not doing anything since gamma = 1.0
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 
+		       step_size = 20, # Period of learning rate decay
+		       gamma = 1.0) # Multiplicative factor of learning rate decay
 
     net, history = train.train_model(
         net=net,
@@ -55,10 +73,13 @@ def run_experiment(config, data_dir):
         loss_fn=loss_fn,
         trainloader=trainloader,
         validloader=validloader,
+        scheduler=scheduler,
         patience=config['patience'],
         max_epochs=config['max_epochs'],
         verbose=0,
         device=config['device'],
+        one_hot=one_hot,
+        n_classes=10 if 'audio_mnist' in config['dataset_name'] else 50,
     )
 
 def main():
@@ -74,6 +95,8 @@ def main():
     # hyperparamter search space
     if "audio_mnist" in args.name:
         search_space = search_spaces.audio_mnist(args.max_epochs)
+    elif "esc50" in args.name:
+        search_space = search_spaces.esc50(args.max_epochs)
     elif "time_frequency" in args.name:
         search_space = search_spaces.time_frequency(args.max_epochs)
     else:
@@ -84,23 +107,28 @@ def main():
     reporter = CLIReporter(
         metric_columns=[
             "loss",
+            "valid_loss",
+            "valid_acc",
+            "best_valid_acc",
             "lambd_est",
             "training_iteration",
-            "best_lambd_est",
-            "best_valid_acc",
         ],
         parameter_columns = [
             'init_lambd',
             'trainable',
+            'speaker_id',
+            #'augment',
+            #'lr_tf',
+            #'pretrained',
+            #'normalize_window',
             'model_name',
-            'center_offset',
         ],
         max_column_length = 10
     )
 
     run_experiment_fn = partial(run_experiment, data_dir=args.data_dir)
 
-    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 2.0, "gpu": 0.33})
+    trainable_with_resources = tune.with_resources(run_experiment_fn, {"cpu" : 4.0, "gpu": 0.25})
 
     tuner = tune.Tuner(
         trainable_with_resources,

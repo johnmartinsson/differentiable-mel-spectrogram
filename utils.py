@@ -1,10 +1,39 @@
+import collections
 import torch
 import numpy as np
 import os
 import tqdm
+import glob
 
 import models
 import datasets
+
+def create_folder(fd):
+    if not os.path.exists(fd):
+        os.makedirs(fd)
+
+def load_checkpoint(model, checkpoint_path=None, device=torch.device('cpu')):
+    if not checkpoint_path:
+        checkpoint_path='./weights/Cnn6_mAP=0.343.pth'
+    print('Checkpoint path: {}'.format(checkpoint_path))
+
+    if not os.path.exists(checkpoint_path): # or os.path.getsize(checkpoint_path) < 3e8:
+        print("checkpoint path does not exist: ", checkpoint_path)
+        create_folder(os.path.dirname(checkpoint_path))
+        zenodo_path = 'https://zenodo.org/record/3987831/files/Cnn6_mAP%3D0.343.pth'
+        os.system('wget -O "{}" "{}"'.format(checkpoint_path, zenodo_path))
+
+    print("loading weights: ", checkpoint_path)
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    state_dict = checkpoint['model']
+
+    new_state_dict = collections.OrderedDict()
+
+    for key, value in state_dict.items():
+        new_key = "spectrogram_model." + key
+        new_state_dict[new_key] = value
+
+    model.load_state_dict(new_state_dict, strict=False)
 
 def get_config_by_row(row):
     config = {}
@@ -16,10 +45,52 @@ def get_config_by_row(row):
 
 def get_dataset_by_config(config, data_dir):
     if config['dataset_name'] == 'audio_mnist':
-        dataset = datasets.AudioMNISTDataset(
-            source_dir    = data_dir,
+        #trainset_speaker_id = config['speaker_id'] #28, 56, 7, 19, 35,  1,  6, 16, 23, 34, 46, 53, 36, 57,  9, 24, 37,  2, 8, 17, 29, 39, 48, 54, 43, 58, 14, 25, 38,  3, 10, 20, 30, 40, 49, 55]
+        trainset_speaker_id = [28, 56, 7, 19, 35,  1,  6, 16, 23, 34, 46, 53, 36, 57,  9, 24, 37,  2, 8, 17, 29, 39, 48, 54, 43, 58, 14, 25, 38,  3, 10, 20, 30, 40, 49, 55]
+        validset_speaker_id = [12, 47, 59, 15, 27, 41,  4, 11, 21, 31, 44, 50]
+        testset_speaker_id = [26, 52, 60, 18, 32, 42,  5, 13, 22, 33, 45, 51]
+
+        # assert no overlap
+        assert(len(trainset_speaker_id + validset_speaker_id + testset_speaker_id) == 60)
+        assert(len(set(trainset_speaker_id + validset_speaker_id + testset_speaker_id)) == 60)
+
+        train_wav_paths = []
+        valid_wav_paths = []
+        test_wav_paths = []
+
+        for speaker_id in trainset_speaker_id:
+            wav_paths = glob.glob(os.path.join(data_dir, 'data', '{:02d}'.format(speaker_id), '*.wav'))
+            train_wav_paths += wav_paths
+
+        for speaker_id in validset_speaker_id:
+            wav_paths = glob.glob(os.path.join(data_dir, 'data', '{:02d}'.format(speaker_id), '*.wav'))
+            valid_wav_paths += wav_paths
+
+        for speaker_id in testset_speaker_id:
+            wav_paths = glob.glob(os.path.join(data_dir, 'data', '{:02d}'.format(speaker_id), '*.wav'))
+            test_wav_paths += wav_paths
+
+        all_wav_paths = glob.glob(os.path.join(data_dir, 'data', '*/*.wav'))
+
+        trainset = datasets.AudioMNISTBigDataset(
+                wav_paths = train_wav_paths
+        )
+        validset = datasets.AudioMNISTBigDataset(
+                wav_paths = valid_wav_paths
+        )
+        testset = datasets.AudioMNISTBigDataset(
+                wav_paths = test_wav_paths
         )
 
+        assert((len(trainset) + len(validset) + len(testset)) == 30000)
+        #print("Trainset: {}".format(len(trainset)))
+
+        return trainset, validset, testset
+    elif config['dataset_name'] == 'esc50':
+        dataset = datasets.ESC50Dataset(
+            source_dir = data_dir,
+            resample_rate = config['resample_rate'],
+        )
     else:
         # random offset 1/5 of tf-image in each direction
         if config['center_offset']:
@@ -90,6 +161,17 @@ def get_model_by_config(config):
             optimized  = config['optimized'],
             normalize_window = config['normalize_window'],
         )
+    elif config['model_name'] == 'bn_linear_net':
+        net = models.BatchNormLinearNet(
+            n_classes  = n_classes,
+            init_lambd = torch.tensor(config['init_lambd']),
+            device     = config['device'],
+            size       = (config['n_points']+1, config['n_points']+1),
+            hop_length = config['hop_length'],
+            optimized  = config['optimized'],
+            normalize_window = config['normalize_window'],
+        )
+
     elif config['model_name'] == 'non_linear_net':
         net = models.NonLinearNet(
             n_classes  = n_classes,
@@ -154,16 +236,55 @@ def get_model_by_config(config):
             n_mels      = config['n_mels'],
             sample_rate = config['resample_rate'],
             n_points    = config['n_points'],
-            hop_length  = config['hop_length'], #int(config['resample_rate'] * config['hop_time_s']),
-            optimized   = config['optimized'], #True,
+            hop_length  = config['hop_length'],
+            optimized   = config['optimized'],
             energy_normalize = config['energy_normalize'],
             normalize_window = config['normalize_window'],
         )
-
+    elif config['model_name'] == 'panns_cnn6':
+        net = models.MelPANNsNet(
+            n_classes   = n_classes,
+            init_lambd  = torch.tensor(config['init_lambd']),
+            device      = config['device'],
+            n_mels      = config['n_mels'],
+            sample_rate = config['resample_rate'],
+            n_points    = config['n_points'],
+            hop_length  = config['hop_length'],
+            optimized   = config['optimized'],
+            augment     = config['augment'],
+            energy_normalize = config['energy_normalize'],
+            normalize_window = config['normalize_window'],
+        )
     else:
         raise ValueError("model name not found: ", config['model_name'])
 
     return net
+
+def get_predictions_by_row_new(row, dataloader, device='cpu'):
+    config = get_config_by_row(row)
+    config['device'] = device
+    logdir = row[1]['logdir']
+    model_chechpoint_path = os.path.join(logdir, 'checkpoint_000000', 'best_model')
+    net = get_model_by_config(config)
+    (model_state, optimizer_state) = torch.load(model_chechpoint_path)
+    net.load_state_dict(model_state)
+    net.to(device)
+
+    net.eval()
+    all_predictions = []
+    all_labels = []
+    for data in tqdm.tqdm(dataloader):
+        inputs, labels = data
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        outputs, _ = net(inputs)
+        predictions = torch.argmax(outputs, axis=1)
+
+        all_labels.append(labels.detach().cpu().numpy())
+        all_predictions.append(predictions.detach().cpu().numpy())
+
+    return np.concatenate(all_labels), np.concatenate(all_predictions)
+
 
 def get_predictions_by_row(row, data_dir, device='cpu', split='valid'):
     config = get_config_by_row(row)
