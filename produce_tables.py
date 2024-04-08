@@ -144,22 +144,23 @@ def produce_result_table(experiment_path, dataset_name):
 
 def main():
     parser = argparse.ArgumentParser(description='Produce plots.')
+    parser.add_argument('--ray_results_dir', help='The name of the ray results directory.', required=True, type=str)
     #parser.add_argument('--experiment_path', help='The name of the experiment directory.', required=True, type=str)
     #parser.add_argument('--dataset_name', help='The dataset name.', required=True, type=str)
     args = parser.parse_args()
 
     #experiment_path = os.path.join(args.experiment_path)
     print("ESC50")
-    produce_table_1('/home/john/gits/differentiable-mel-spectrogram/ray_results/esc50', 'esc50')
+    produce_table_1(os.path.join(args.ray_results_dir, 'esc50'), 'esc50')
     print("")
     
     print("A-MNIST")
-    produce_table_1('/home/john/gits/differentiable-mel-spectrogram/ray_results/audio_mnist', 'audio_mnist')
+    produce_table_1(os.path.join(args.ray_results_dir, 'audio_mnist'), 'audio_mnist')
     print("")
 
     print("time-frequency")
     #produce_table_2('/mnt/storage_1/john/ray_results/time_frequency', 'time_frequency')
-    produce_table_2('/home/john/gits/differentiable-time-frequency-transforms/ray_results/time_frequency', 'time_frequency')
+    produce_table_1(os.path.join(args.ray_results_dir, 'time_frequency'), 'time_frequency')
     print("")
 
 
