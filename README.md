@@ -6,7 +6,17 @@ The official implementation of DMEL the method presented in the paper "DMEL: The
 
 Cite as:
     
-    TODO: WRITE ABOUT AND REFERENCE THE PAPER
+    @INPROCEEDINGS{Martinsson2024,
+        author={Martinsson, John and Sandsten, Maria},
+        booktitle={ICASSP 2024 - 2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)}, 
+        title={DMEL: The Differentiable Log-Mel Spectrogram as a Trainable Layer in Neural Networks}, 
+        year={2024},
+        volume={},
+        number={},
+        pages={5005-5009},
+        keywords={Neural networks;Transforms;Acoustics;Computational efficiency;Task analysis;Speech processing;Spectrogram;Deep learning;STFT;learnable Mel spectrogram;audio classification;adaptive transforms},
+        doi={10.1109/ICASSP48485.2024.10446816}
+    }
         
 # Reproduce the results in the paper
     
