@@ -7,7 +7,7 @@ import torch
 
 from ray import tune
 
-def predict_test(df, data_dir, experiment_path):
+def predict_test(df, data_base_dir, ray_results_dir, dataset_name):
     df['test_accuracy'] = 0
     #predictionss = []
     #labelss = []
@@ -15,7 +15,8 @@ def predict_test(df, data_dir, experiment_path):
         config = utils.get_config_by_row(row)
         break
 
-    _,_,testset = utils.get_dataset_by_config(config, data_dir)
+    
+    _,_,testset = utils.get_dataset_by_config(config, os.path.join(data_base_dir, dataset_name))
     testloader = torch.utils.data.DataLoader(testset, batch_size=32, shuffle=False, num_workers=8)
 
     print("making test predictions (takes a couple of minutes on GPU) ...")
@@ -30,28 +31,27 @@ def predict_test(df, data_dir, experiment_path):
         #predictionss.append(predictions)
         #labelss.append(labels)
 
-    dataset_name = os.path.basename(data_dir)
-
+    experiment_path = os.path.join(ray_results_dir, dataset_name)
+    print("saving predictions to file {} ...".format(os.path.join(experiment_path, "{}.csv")))
     df.to_csv(os.path.join(experiment_path, "{}.csv".format(dataset_name)))
-    #predictionss = np.array(predictionss)
-    #labelss = np.array(labelss)
-    #np.save(os.path.join(experiment_path, "{}_predictionss.npy".format(dataset_name)), predictionss)
-    #np.save(os.path.join(experiment_path, "{}_labelss.npy".format(dataset_name)), labelss)
 
     return df
 
 def main():
     parser = argparse.ArgumentParser(description='Produce plots.')
-    parser.add_argument('--experiment_path', help='The name of the experiment directory.', required=True, type=str)
-    parser.add_argument('--data_dir', help='The path to the audio data directory.', required=True, type=str)
+    parser.add_argument('--ray_results_dir', help='The name of the ray results directory.', required=True, type=str)
+    parser.add_argument('--data_base_dir', help='The path to the audio data directory.', required=True, type=str)
+    parser.add_argument('--dataset_name', help='The dataset name.', required=True, type=str)
     args = parser.parse_args()
 
-    tuner = tune.Tuner.restore(path=args.experiment_path)
-    print(args.experiment_path)
+    experiment_path = os.path.join(args.ray_results_dir, args.dataset_name)
+    tuner = tune.Tuner.restore(path=experiment_path)
     result = tuner.fit()
     df = result.get_dataframe()
 
-    predict_test(df, args.data_dir, args.experiment_path)
+    df = predict_test(df, args.data_base_dir, args.ray_results_dir, args.dataset_name)
+
+    print(df.head())
 
 
 if __name__ == '__main__':

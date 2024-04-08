@@ -150,11 +150,11 @@ def main():
 
     #experiment_path = os.path.join(args.experiment_path)
     print("ESC50")
-    produce_table_1('./test/esc50_final', 'esc50')
+    produce_table_1('/home/john/gits/differentiable-mel-spectrogram/ray_results/esc50', 'esc50')
     print("")
     
     print("A-MNIST")
-    produce_table_1('/home/john/gits/differentiable-time-frequency-transforms/ray_results/audio_mnist_10ms', 'audio_mnist')
+    produce_table_1('/home/john/gits/differentiable-mel-spectrogram/ray_results/audio_mnist', 'audio_mnist')
     print("")
 
     print("time-frequency")
