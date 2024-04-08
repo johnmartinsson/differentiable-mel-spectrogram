@@ -5,4 +5,4 @@ sh download_data.sh
 sh run_experiments.sh
 
 # produce all the figures (takes ~5 min on a 2080Ti)
-python produce_figures.py --split=test --ray_root_dir=$(pwd)/ray_results/ --data_dir=$(pwd)/data/audio-mnist
+python produce_tables.py
