@@ -40,11 +40,14 @@ which runs the commands
 
     # download the FSD dataset
     sh download_data.sh
-
+    
     # run all the experiments (takes ~16h on a 2080Ti)
     sh run_experiments.sh
-
-    # produce the main tables
+    
+    # run all test predictions
+    sh run_test_predictions.sh
+    
+    # produce all the tables
     python produce_tables.py
 
 That should be all.
