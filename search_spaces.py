@@ -37,7 +37,7 @@ def audio_mnist(max_epochs):
     resample_rate = 8000
     search_space = {
         # model
-        'model_name' : 'mel_linear_net', #'panns_cnn6', #tune.grid_search(['mel_conv_net', 'mel_linear_net']),
+        'model_name' : 'mel_linear_net',
         'n_mels' : 64,
         'hop_length' :int(resample_rate * 0.010),
         'energy_normalize' : True,
@@ -72,16 +72,16 @@ def time_frequency(max_epochs):
 
     search_space = {
         # model
-        'model_name' : 'linear_net', #tune.grid_search(['linear_net']), #tune.grid_search(['conv_net', 'linear_net']),
+        'model_name' : 'linear_net',
         'hop_length' : 1,
         'optimized'  : False,
-        'normalize_window' : False, #tune.grid_search([False, True]),
+        'normalize_window' : False,
 
         # training
-        'optimizer_name' : 'sgd', #tune.grid_search(['sgd', 'adam']),
+        'optimizer_name' : 'sgd',
         'lr_model'       : 1e-3, 
         'lr_tf'          : 1,
-        'batch_size'     : 128, #tune.grid_search([8, 128, 512]),
+        'batch_size'     : 128,
         'trainable'      : tune.grid_search([True, False]),
         'max_epochs'     : max_epochs,
         'patience'       : 100,
@@ -90,7 +90,7 @@ def time_frequency(max_epochs):
         # dataset
         'n_points'      : 128,
         'noise_std'     : 0.5,
-        'init_lambd'    : tune.grid_search([x * sigma_ref for x in [0.2, 1.0, 5.0]]), #0.2, 0.6, 1.0, 1.8, 2.6]]),
+        'init_lambd'    : tune.grid_search([x * sigma_ref for x in [0.2, 1.0, 5.0]]),
         'n_samples'     : 5000, 
         'sigma_ref'     : sigma_ref,
         'dataset_name'  : 'time_frequency', 
