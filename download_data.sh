@@ -1,11 +1,11 @@
 # clone datasets
 git clone https://github.com/soerenab/AudioMNIST.git
-#git clone https://github.com/karolpiczak/ESC-50.git
+git clone https://github.com/karolpiczak/ESC-50.git
 
-#mkdir data
+mkdir data
 
 # move datasets to data folder
-#mv ESC-50/ data/esc50
+mv ESC-50/ data/esc50
 mv AudioMNIST/ data/audio_mnist
 
 # resample AudioMNIST to 8000 Hz
