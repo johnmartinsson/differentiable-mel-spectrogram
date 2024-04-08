@@ -50,7 +50,7 @@ which runs the commands
     # produce all the tables
     python produce_tables.py
 
-The default number of runs are set to 1. Run once to check how long time it takes and that the results are reasonable, then increase the number of runs to 10 as in the paper.
+The default number of runs are set to 1. Run once to check how long time it takes and that the results are reasonable, then increase the number of runs to 10 (set in run_experiments.sh) as in the paper.
 
 # More details
 Some details on how to use the code.
