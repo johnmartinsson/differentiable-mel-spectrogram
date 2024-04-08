@@ -40,14 +40,17 @@ which runs the commands
 
     # download the FSD dataset
     sh download_data.sh
-
-    # run all the experiments (takes ~16h on a 2080Ti)
+    
+    # run all the experiments (takes time ...)
     sh run_experiments.sh
-
-    # produce the main tables
+    
+    # run all test predictions
+    sh run_test_predictions.sh
+    
+    # produce all the tables
     python produce_tables.py
 
-That should be all.
+The default number of runs are set to 1. Run once to check how long time it takes and that the results are reasonable, then increase the number of runs to 10 (set in run_experiments.sh) as in the paper.
 
 # More details
 Some details on how to use the code.
