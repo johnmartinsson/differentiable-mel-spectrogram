@@ -41,7 +41,7 @@ which runs the commands
     # download the FSD dataset
     sh download_data.sh
     
-    # run all the experiments (takes ~16h on a 2080Ti)
+    # run all the experiments (takes time ...)
     sh run_experiments.sh
     
     # run all test predictions
