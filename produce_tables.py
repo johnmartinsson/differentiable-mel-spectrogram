@@ -159,8 +159,7 @@ def main():
     print("")
 
     print("time-frequency")
-    #produce_table_2('/mnt/storage_1/john/ray_results/time_frequency', 'time_frequency')
-    produce_table_1(os.path.join(args.ray_results_dir, 'time_frequency'), 'time_frequency')
+    produce_table_2(os.path.join(args.ray_results_dir, 'time_frequency'), 'time_frequency')
     print("")
 
 

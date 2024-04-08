@@ -8,4 +8,4 @@ sh run_experiments.sh
 sh run_test_predictions.sh
 
 # produce all the tables
-python produce_tables.py
+python produce_tables.py --ray_results_dir=$(pwd)/ray_results/
