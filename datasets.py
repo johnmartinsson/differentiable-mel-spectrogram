@@ -62,8 +62,8 @@ class GaussPulseDatasetTimeFrequency(torch.utils.data.Dataset):
             f_center = f_center_offset + 0.25
 
             if demo:
-                f_offset = 0.4 * f_max
-                t_offset = 0.4 * t_max
+                f_offset = 0.5 * f_max
+                t_offset = 0.5 * t_max
             else:
                 f_offset = torch_random_uniform([f_min, f_max])
                 t_offset = torch_random_uniform([t_min, t_max])
@@ -159,6 +159,41 @@ def load_meta_data(source_dir):
     meta_data = parse_csv(csv_file)
     return meta_data
 
+class AudioMNISTBigDataset(torch.utils.data.Dataset):
+    def __init__(self, wav_paths):
+        self.xs = []
+        self.ys = []
+
+        sample_rates = []
+        for wav_path in wav_paths:
+            audio, sr = librosa.load(wav_path, sr=None) # already 8000 Hz
+            sample_rates.append(sr)
+            target = int(os.path.basename(wav_path).split('_')[0])
+
+            x = audio.copy()
+            # zero pad signal on both sides
+            x = np.pad(x, 1 + (8000-len(x)) // 2)[:8000]
+            self.xs.append(x)
+            self.ys.append(target)
+
+        assert len(list(set(self.ys))) == 10 # assert 10 classes
+
+        self.xs = np.array(self.xs)
+        self.ys = np.array(self.ys)
+
+        # assert all files have the same sample rates
+        assert len(list(set(sample_rates))) == 1
+        # assert proper sample rate
+        assert sample_rates[0] == 8000
+
+        self.sample_rate = 8000
+
+    def __len__(self):
+        return len(self.xs)
+    def __getitem__(self, idx):
+        return self.xs[idx], self.ys[idx]
+
+
 class AudioMNISTDataset(torch.utils.data.Dataset):
     # VERSION: https://doi.org/10.5281/zenodo.1342401
     def __init__(self, source_dir):
@@ -203,10 +238,7 @@ class ESC50Dataset(torch.utils.data.Dataset):
         
         self.xs = []
         self.ys = []
-        #self.categories = []
-        #self.folds = []
         self.sample_rate = None
-
         
         xs_path = os.path.join(source_dir, "{}_xs.npy".format(resample_rate))
         ys_path = os.path.join(source_dir, "{}_ys.npy".format(resample_rate))
@@ -243,5 +275,3 @@ class ESC50Dataset(torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         return self.xs[idx], self.ys[idx]
-
-

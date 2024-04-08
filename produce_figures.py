@@ -72,31 +72,39 @@ def produce_data_example_plot():
         ax[0, i].set_title(r'$\lambda = {0:.1f}$'.format(lambda_param * scales[i]))
         
     plt.tight_layout()
-    plt.savefig('results/figures/data_example.pdf', bbox_inches='tight')
+    plt.savefig(os.path.join(experiment_path, 'data_example.pdf'), bbox_inches='tight')
         
 
 def produce_accuracy_plot(experiment_path, data_dir, split='valid'):
     if 'audio_mnist' in experiment_path:
         dataset_name = 'audio_mnist'
         model_names = ['mel_linear_net', 'mel_conv_net']
+    elif 'esc50' in experiment_path:
+        dataset_name = 'esc50'
+        model_names = ['panns_cnn6']
     elif 'time_frequency' in experiment_path:
         dataset_name = 'time_frequency'
         model_names = ['linear_net', 'conv_net']
 
+    print("############################################")
+    print("Dataset : {}, and models: {}".format(dataset_name, model_names))
+    print("############################################")
+
     tuner = tune.Tuner.restore(path=experiment_path)
+    print(experiment_path)
     result = tuner.fit()
     df = result.get_dataframe()
 
 
     if split == 'test':
         # make test predictions if they do not exist
-        if not os.path.exists("results/{}.csv".format(dataset_name)):
-            predict_test(df, dataset_name, data_dir)
+        #if not os.path.exists(os.path.join(experiment_path, "{}.csv".format(dataset_name))):
+        #    predict_test(df, dataset_name, data_dir, experiment_path)
 
         # load test predictions
-        df = pd.read_csv("results/{}.csv".format(dataset_name))
-        predictionss = np.load("results/{}_predictionss.npy".format(dataset_name))
-        labelss = np.load("results/{}_labelss.npy".format(dataset_name))
+        df = pd.read_csv(os.path.join(experiment_path, "{}.csv".format(dataset_name)))
+        predictionss = np.load(os.path.join(experiment_path, "{}_predictionss.npy".format(dataset_name)))
+        labelss = np.load(os.path.join(experiment_path, "{}_labelss.npy".format(dataset_name)))
 
     column_width = 4
     figure_height = 3
@@ -154,56 +162,116 @@ def produce_accuracy_plot(experiment_path, data_dir, split='valid'):
         ax[0, 1].set_ylim([0.95, 1])
 
     plt.tight_layout()
-    plt.savefig('results/figures/{}_{}.pdf'.format(split, dataset_name), bbox_inches='tight')
+    fig_path = os.path.join(experiment_path, '{}_{}.pdf'.format(split, dataset_name))
+    print("saving figure ... ", fig_path)
+    plt.savefig(fig_path, bbox_inches='tight')
 
-def predict_test(df, dataset_name, data_dir):
-    df['test_accuracy'] = 0
-    predictionss = []
-    labelss = []
+def produce_baseline_plot(experiment_path, dataset_name, model_names, data_dir, split='valid'):
+    print("############################################")
+    print("Dataset : {}, and models: {}".format(dataset_name, model_names))
+    print("############################################")
 
-    print("making test predictions (takes a couple of minutes on GPU) ...")
-    for row in tqdm.tqdm(df.iterrows()):
-        idx = row[0]
-        #print(row)
-        #print("Model = ", row[1]['config/model_name'])
-        #print("reported best valid acc: ", row[1]['best_valid_acc'])
-        labels, predictions = utils.get_predictions_by_row(row, data_dir, split='test', device='cuda:1')
-        test_acc = np.mean(labels == predictions)
-        df.at[idx, 'test_accuracy'] = test_acc
-        #print("test acc: ", test_acc)
+    tuner = tune.Tuner.restore(path=experiment_path)
+    print(experiment_path)
+    result = tuner.fit()
+    df = result.get_dataframe()
+
+    if split == 'test':
+        # make test predictions if they do not exist
+        if not os.path.exists(os.path.join(experiment_path, "{}.csv".format(dataset_name))):
+            predict_test(df, dataset_name, data_dir, experiment_path)
+
+        # load test predictions
+        df = pd.read_csv(os.path.join(experiment_path, "{}.csv".format(dataset_name)))
+        predictionss = np.load(os.path.join(experiment_path, "{}_predictionss.npy".format(dataset_name)))
+        labelss = np.load(os.path.join(experiment_path, "{}_labelss.npy".format(dataset_name)))
+
+    column_width = 4
+    figure_height = 3
+
+    #####################################################################
+    # Accuracy plot
+    #####################################################################
+    df = df[(df['config/dataset_name'] == dataset_name)]
+
+    fig, ax = plt.subplots(1, 1, figsize=(column_width*1, figure_height*1))
+
+    for idx_column, model_name in enumerate(model_names):
+        df_model = df[(df['config/model_name'] == model_name)]
         
-        predictionss.append(predictions)
-        labelss.append(labels)
+        model_title = get_model_title(model_name)
+        
+        #ax[0, idx_column].set_title(model_title)
 
-    df.to_csv("results/{}.csv".format(dataset_name))
-    predictionss = np.array(predictionss)
-    labelss = np.array(labelss)
-    np.save("results/{}_predictionss.npy".format(dataset_name), predictionss)
-    np.save("results/{}_labelss.npy".format(dataset_name), labelss)
+        if split == 'valid':
+            y_str = 'best_valid_acc'
+            y_title = 'Validation accuracy'
+        elif split == 'test':
+            y_str = 'test_accuracy'
+            y_title = 'Test accuracy'
+        else:
+            raise ValueError('split not found: ', split)
+        
+        sns.lineplot(data=df_model, x="config/init_lambd", 
+                     y=y_str, marker='o', 
+                     hue='config/trainable', ax=ax)
+
+        #ax[0, idx_column].legend(loc='lower center', title='Trainable')
+
+        #g = sns.lineplot(data=df_model, x="config/init_lambd",
+        #                 y='lambd_est', hue='config/trainable', 
+        #                 marker="o", ax=ax[1, idx_column])
+
+        #ax[1, idx_column].legend(loc='upper left', title='Trainable')
+
+    ax.set_ylabel(y_title)
+    ax.set_xlabel(r'$\lambda_{init}$')
+
+    if dataset_name == 'audio_mnist':
+        ax.set_ylim([0.75, 0.96])
+        ax.set_ylim([0.75, 0.96])
+        
+    if dataset_name == 'time_frequency':
+        ax.set_ylim([0.95, 1])
+        ax.set_ylim([0.95, 1])
+
+    if dataset_name == 'esc50':
+        ax.set_ylim([0.65, 0.9])
+        ax.set_ylim([0.65, 0.9])
+
+    plt.tight_layout()
+    fig_path = os.path.join(experiment_path, '{}_{}.pdf'.format(split, dataset_name))
+    print("saving figure ... ", fig_path)
+    plt.savefig(fig_path, bbox_inches='tight')
+
+
 
 def main():
     parser = argparse.ArgumentParser(description='Produce plots.')
-    parser.add_argument('--ray_root_dir', help='The name of the root directory to save the ray search results.', required=True, type=str)
+    parser.add_argument('--experiment_path', help='The name of the experiment directory.', required=True, type=str)
     parser.add_argument('--data_dir', help='The absolute path to the audio-mnist data directory.', required=True, type=str)
+    #parser.add_argument('--name', help='The name of the experiment', required=True, type=str)
     parser.add_argument('--split', help='The name of the split [train, valid].', required=True, type=str)
     args = parser.parse_args()
 
-    if not os.path.exists('./results/figures'):
-        os.makedirs('./results/figures')
-
     # produce figure 1
-    produce_data_example_plot()
+    #produce_data_example_plot()
 
     # produce figure 2
-    experiment_path = os.path.join(args.ray_root_dir, 'time_frequency')
-    produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
+    #experiment_path = os.path.join(args.ray_root_dir, 'time_frequency')
+    #produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
 
     # produce figure 3
-    experiment_path = os.path.join(args.ray_root_dir, 'audio_mnist')
-    produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
+    #experiment_path = os.path.join(args.ray_root_dir, 'audio_mnist')
+    #produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
 
-    print("")
-    print("the plots can now be be found in ./results/figures")
+    #produce_accuracy_plot(experiment_path, data_dir=args.data_dir, split=args.split)
+
+    experiment_path = os.path.join(args.experiment_path)
+    produce_baseline_plot(experiment_path, dataset_name='esc50', model_names=['panns_cnn6'], data_dir=args.data_dir, split=args.split)
+
+    #print("")
+    #print("the plots can now be be found in ./results/figures")
 
 
 def get_model_title(model_name):
@@ -215,6 +283,8 @@ def get_model_title(model_name):
         model_title = 'MelLinearNet'
     elif model_name == 'mel_conv_net':
         model_title = 'MelConvNet'
+    elif model_name == 'panns_cnn6':
+        model_title = 'PANNs CNN6'
     else:
         raise ValueError("model_name: {} is not defined.".format(model_name))
         
