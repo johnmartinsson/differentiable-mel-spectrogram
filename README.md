@@ -2,7 +2,7 @@
 
 ![DMEL](figures/dmel.png)
 
-The official implementation of DMEL the method presented in the paper "DMEL: The differentiable log-Mel spectrogram as a trainable layer in neural networks".
+The official implementation of DMEL the method presented in the paper [DMEL: The differentiable log-Mel spectrogram as a trainable layer in neural networks](https://ieeexplore.ieee.org/abstract/document/10446816).
 
 Cite as:
     
